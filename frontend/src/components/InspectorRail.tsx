@@ -1,8 +1,31 @@
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAnalysis } from '@/lib/useAnalysis'
+import { tokens } from '@/lib/tokens'
+import { pywebview, type ModelIdentity } from '@/lib/pywebview'
+import { Caption } from './Caption'
 
 export function InspectorRail() {
-  const { pending, accept, reject, selection } = useAnalysis()
+  const { pending, accept, reject, selection, scrub, timeline } = useAnalysis()
+  const [identity, setIdentity] = useState<ModelIdentity | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    pywebview.modelIdentity().then((id) => { if (!cancelled) setIdentity(id) })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const meta = e.metaKey || e.ctrlKey
+      if (!meta || e.key.toLowerCase() !== 'z' || e.shiftKey) return
+      if (timeline.length <= 1) return
+      e.preventDefault()
+      scrub(timeline[timeline.length - 2].id)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [scrub, timeline])
 
   return (
     <div className="flex h-full flex-col p-4 gap-4">
@@ -12,22 +35,22 @@ export function InspectorRail() {
         {pending ? (
           <motion.div
             key={pending.splice.id}
-            initial={{ x: 24, opacity: 0 }}
+            initial={{ x: 'var(--slide-inspector)', opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 24, opacity: 0 }}
-            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col gap-4"
+            exit={{ x: 'var(--slide-inspector)', opacity: 0 }}
+            transition={tokens.springSoft}
+            className="flex flex-col gap-4 flex-1"
           >
             <div>
-              <div className="text-[11px] uppercase tracking-wider text-[var(--color-pending)]">
+              <div className="gb-unit-label" style={{ color: 'var(--color-pending)' }}>
                 pending splice
               </div>
-              <div className="text-[15px] font-bold mt-1">{pending.splice.label}</div>
+              <div className="text-[15px] font-bold mt-1">
+                {pending.splice.label}
+              </div>
             </div>
 
-            <p className="text-[13px] leading-relaxed text-[var(--color-fg)]">
-              {pending.caption}
-            </p>
+            <Caption text={pending.caption} framing="accept" />
 
             <div className="mt-auto flex gap-2">
               <button
@@ -43,6 +66,11 @@ export function InspectorRail() {
                 Reject
               </button>
             </div>
+            <div className="gb-unit-label flex items-center gap-3 text-[var(--color-fg-subtle)]">
+              <span>⌘Z scrub back</span>
+              <span>⏎ accept</span>
+              <span>esc reject</span>
+            </div>
           </motion.div>
         ) : selection ? (
           <motion.div
@@ -50,12 +78,14 @@ export function InspectorRail() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col gap-3 text-[13px] text-[var(--color-fg-muted)]"
+            className="flex flex-col gap-3 text-[length:var(--gb-text-body)] text-[var(--color-fg-muted)]"
           >
-            <div className="text-[11px] uppercase tracking-wider text-[var(--color-fg-subtle)]">
-              selected · {selection}
-            </div>
-            <p>Drag a splice from the tray, or use the command bar above. Each splice previews here before commit.</p>
+            <div className="gb-unit-label">selected · {selection}</div>
+            <Caption
+              text="Drag a region of the field, or pick a transformation from the tray. Each splice previews here before commit."
+              framing="accept"
+              animate={false}
+            />
           </motion.div>
         ) : (
           <motion.div
@@ -63,9 +93,26 @@ export function InspectorRail() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="text-[13px] text-[var(--color-fg-subtle)]"
+            className="flex flex-col gap-3 text-[length:var(--gb-text-body)] text-[var(--color-fg-subtle)]"
           >
-            <p>No splice staged. Click a panel to inspect, or pick a transformation from the tray.</p>
+            {identity?.loaded && (
+              <div className="flex flex-col gap-1 pb-3 border-b border-[var(--color-border)]">
+                <div className="gb-unit-label" style={{ color: 'var(--color-fg-muted)' }}>
+                  loaded model
+                </div>
+                <div className="text-[13px] text-[var(--color-fg)] font-bold">
+                  COMPAS recidivism
+                </div>
+                <div className="gb-num text-[11px] text-[var(--color-fg-muted)]">
+                  {identity.n_samples?.toLocaleString()} samples · acc {identity.accuracy?.toFixed(3)} · {identity.n_flags} bias flags
+                </div>
+              </div>
+            )}
+            <Caption
+              text="No splice staged. Drag a region of the probe field, or pick a transformation from the tray to inspect a remedy."
+              framing="accept"
+              animate={false}
+            />
           </motion.div>
         )}
       </AnimatePresence>

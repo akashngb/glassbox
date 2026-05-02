@@ -7,7 +7,7 @@ export function BentoCanvas() {
 
   return (
     <div
-      className="grid h-full gap-3 p-4"
+      className="gb-bento-canvas grid h-full gap-3 p-4"
       style={{
         gridTemplateColumns: '1fr 1.4fr',
         gridTemplateRows: '1fr 1fr 1fr',

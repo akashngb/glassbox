@@ -1,16 +1,7 @@
-/**
- * Wave — the visual primitive every panel renders.
- *
- * Two layered SVG paths:
- *   - baseline path (solid, muted color)
- *   - ghost path (overlay, accent color, drawn via pathLength when pending)
- *
- * The morph happens via path d-interpolation when ghost arrives.
- */
 import { motion } from 'motion/react'
 
 export interface WaveProps {
-  baseline: number[]    // y values 0..1
+  baseline: number[]
   ghost?: number[] | null
   width?: number
   height?: number
@@ -27,15 +18,14 @@ export function Wave({ baseline, ghost, width = 320, height = 80 }: WaveProps) {
       className="block w-full h-[var(--wave-height,80px)]"
       aria-hidden="true"
     >
-      <motion.path
+      <path
         d={baseD}
         fill="none"
         stroke="var(--color-baseline)"
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
-        animate={{ d: baseD }}
-        transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+        style={{ transition: 'd 320ms cubic-bezier(0.16, 1, 0.3, 1)' }}
       />
       {ghostD && (
         <motion.path

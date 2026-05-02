@@ -27,12 +27,17 @@ export interface PendingSplice {
   draggedFrom: 'tray' | 'command-bar'
 }
 
+export type DragPhase = 'idle' | 'arming' | 'selecting' | 'carrying' | 'committing'
+
 export interface GlassboxState {
   baseline: Analysis
   timeline: TimelineNode[]
   pending: PendingSplice | null
   selection: PanelId | null
   hovered: PanelId | null
+  /** Set by SpliceGesture; consumed by ProbeField (suppresses hover tooltip
+   *  + cluster halo) and SpliceTray (drives drop-target affordance). */
+  dragPhase: DragPhase
 }
 
 export type GlassboxAction =
@@ -43,6 +48,7 @@ export type GlassboxAction =
   | { kind: 'select', id: PanelId | null }
   | { kind: 'hover', id: PanelId | null }
   | { kind: 'scrub', nodeId: string }
+  | { kind: 'drag-phase', phase: DragPhase }
 
 export function head(state: GlassboxState): TimelineNode {
   return state.timeline[state.timeline.length - 1]
@@ -65,6 +71,7 @@ export const initialState: GlassboxState = {
   pending: null,
   selection: null,
   hovered: null,
+  dragPhase: 'idle',
 }
 
 export function glassboxReducer(state: GlassboxState, action: GlassboxAction): GlassboxState {
@@ -115,11 +122,13 @@ export function glassboxReducer(state: GlassboxState, action: GlassboxAction): G
     case 'hover':
       return { ...state, hovered: action.id }
 
+    case 'drag-phase':
+      return { ...state, dragPhase: action.phase }
+
     case 'scrub': {
       const idx = state.timeline.findIndex(n => n.id === action.nodeId)
       if (idx < 0) return state
-      // Truncating to the scrubbed node would lose work; instead, just reset pending.
-      return { ...state, pending: null }
+      return { ...state, timeline: state.timeline.slice(0, idx + 1), pending: null }
     }
 
     default:

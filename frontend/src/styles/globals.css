@@ -1,22 +1,23 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
 
 @theme {
-  /* Surfaces — warm-cool dark with a single amber accent. */
+  /* === SURFACES — warm-cool dark with a single amber accent === */
   --color-bg:        #0e1014;
   --color-surface:   #16191f;
-  --color-elevated: #1c2029;
+  --color-elevated:  #1c2029;
   --color-border:    #262b35;
   --color-fg:        #e8eaee;
   --color-fg-muted:  #9aa0ab;
   --color-fg-subtle: #6b7280;
 
-  /* Single accent — used sparingly for state, not decoration. */
+  /* === ACCENT === */
   --color-accent:        #ffb86b;
   --color-accent-soft:   #ffb86b22;
   --color-accent-strong: #ff9a3d;
+  --color-accent-cool:   #6bb8ff;     /* paired cool blue, used only on baseline cohort lines */
 
-  /* Semantic states. */
+  /* === SEMANTIC STATES === */
   --color-pending:  #ffb86b;
   --color-ghost:    #ffb86b88;
   --color-baseline: #6b7280;
@@ -24,23 +25,125 @@
   --color-bad:      #ef4444;
   --color-good:     #10b981;
 
-  /* Type. Atkinson Hyperlegible for body, JetBrains Mono for numbers. */
+  /* === TYPE === */
   --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 
-  /* Motion. Single source of truth so nothing drifts. */
-  --motion-stiff: 280;
-  --motion-damp:  22;
-  --ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in:      cubic-bezier(0.7, 0, 0.84, 0);
+  --gb-text-headline: 28px;
+  --gb-text-body:     13px;
+  --gb-text-meta:     11px;
+  --gb-text-micro:    10px;
+  --gb-text-input:    14px;
+  --gb-leading-tight:   1.25;
+  --gb-leading-body:    1.45;
+  --gb-leading-display: 1.0;
+  --gb-caption-max-w:   58ch;
+  --gb-caption-line-h:  1.45;
+  --gb-caption-lifespan: 8000ms;
 
-  /* Radii. */
+  /* === DURATIONS === */
+  --dur-instant: 80ms;
+  --dur-quick:   180ms;
+  --dur-base:    320ms;
+  --dur-event:   620ms;
+  --dur-boot:    1100ms;
+  --dur-scrub:   500ms;
+
+  /* === EASING (GSAP names mirror in CSS) === */
+  --ease-out:     cubic-bezier(0.16, 1, 0.3, 1);     /* power3.out */
+  --ease-in:      cubic-bezier(0.7, 0, 0.84, 0);     /* power3.in */
+  --ease-in-out:  cubic-bezier(0.65, 0, 0.35, 1);    /* power2.inOut */
+  --ease-settle:  cubic-bezier(0.20, 0.80, 0.30, 1.05); /* back.out(1.4) */
+  --ease-dampen:  cubic-bezier(0.4, 0, 0.6, 1);      /* power1.inOut */
+
+  /* === MOTION SPRINGS ===
+     Two profiles: chrome allows subtle overshoot (22 damping), wave morph is
+     critical-damped (35 damping) — overshoot on a loss curve reads "model spiked." */
+  --motion-stiff:        280;
+  --motion-damp:          22;
+  --motion-damp-wave:     35;        /* wave path-d morph; no overshoot */
+  --motion-stiff-soft:   180;
+  --motion-damp-soft:     26;
+  --motion-stiff-snap:   380;
+  --motion-damp-snap:     18;
+
+  /* === STAGGER === */
+  --stagger-panel:    60ms;
+  --stagger-tray:     40ms;
+  --stagger-caption:  12ms;
+  --stagger-timeline: 28ms;
+
+  /* === RADII === */
   --radius-panel: 12px;
   --radius-tray:  8px;
   --radius-pill:  999px;
+
+  /* === SLIDE OFFSETS === */
+  --slide-inspector: 24px;
+  --slide-panel:     12px;
+  --slide-tline:     16px;
+
+  /* === PROBE FIELD ===
+     Demo default 120; rich mode 220 kept as escape hatch.
+     --probe-pulse-ms is honored by ProbeField via tokens.ts. */
+  --probe-baseline:        #2c3340;
+  --probe-evaluating:      #6b7280;
+  --probe-detected:        #ef4444;
+  --probe-spliced:         #ffb86b;
+  --probe-density:         120;
+  --probe-density-rich:    220;
+  --probe-drift-speed:     0.06;
+  --probe-pulse-ms:        1200;
+  --probe-dampen-factor:   0.40;
+
+  /* === GLASS SYSTEM ===
+     Backdrop-filter chrome — works on WKWebView/WebView2/WebKitGTK with prefix.
+     Token-driven so a single fallback flip swaps to solid surfaces if blur perf bites. */
+  --gb-glass-blur:        14px;
+  --gb-glass-saturate:    140%;
+  --gb-glass-tint:        rgba(22, 25, 31, 0.62);
+  --gb-glass-tint-active: rgba(22, 25, 31, 0.72);
+  --gb-glass-tint-raised: rgba(22, 25, 31, 0.55);
+  --gb-glass-tint-sunken: rgba(22, 25, 31, 0.72);
+  --gb-glass-edge:        rgba(255, 255, 255, 0.05);
+  --gb-glass-edge-bright: rgba(255, 184, 107, 0.35);
+  --gb-glass-shadow:      0 8px 28px -12px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
+  --gb-glass-refraction:  inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+
+  /* === SPLICE FAMILY COLORS — only used on tile chrome, never on data viz === */
+  --gb-family-unlearn:    var(--color-bad);
+  --gb-family-reweight:   var(--color-accent);
+  --gb-family-smote:      #6bb8ff;
+  --gb-family-threshold:  var(--color-warn);
+  --gb-family-fairlearn:  var(--color-good);
+
+  /* === STATUS PILL === */
+  --gb-status-h:          22px;
+  --gb-status-pad-x:      10px;
+  --gb-status-dot-size:   6px;
+  --gb-status-pulse-from: 1;
+  --gb-status-pulse-to:   0.65;
+
+  /* === TIMELINE === */
+  --gb-timeline-h:           64px;
+  --gb-timeline-node-d:      12px;
+  --gb-timeline-gap:         24px;
+  --gb-timeline-connector-h: 1px;
+
+  /* === SPLICE TILE === */
+  --gb-tile-glyph-size:   24px;
+
+  /* === DRAG GESTURE === */
+  --drag-arm-distance:    6px;
+  --drag-min-area:        0.0036;
+  --drag-min-probes:      3;
+  --region-shadow-lift:   0 4px 16px rgba(0, 0, 0, 0.4);
+
+  /* === KEYBOARD FALLBACK === */
+  --keyboard-focus-outline: 2px solid var(--color-accent);
 }
 
-/* Base. */
+/* === BASE === */
 html, body, #root {
   height: 100%;
 }
@@ -55,11 +158,14 @@ body.gb-body {
   overflow: hidden;
 }
 
-/* Single global focus ring. */
 *:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+::selection {
+  background-color: var(--color-accent-soft);
 }
 
 /* Tabular numerics on every live number. */
@@ -69,14 +175,40 @@ body.gb-body {
   font-feature-settings: "tnum", "zero";
 }
 
-/* Panel chrome — used by every bento cell. */
-.gb-panel {
-  background: var(--color-surface);
+/* === GLASS UTILITY ===
+   Composable on any surface. Variants flip a single CSS var so the @theme
+   block stays the only place values live. */
+.gb-glass {
+  background: var(--gb-glass-tint);
+  -webkit-backdrop-filter: blur(var(--gb-glass-blur)) saturate(var(--gb-glass-saturate));
+  backdrop-filter: blur(var(--gb-glass-blur)) saturate(var(--gb-glass-saturate));
   border: 1px solid var(--color-border);
+  box-shadow: var(--gb-glass-shadow), var(--gb-glass-refraction);
+  position: relative;
+}
+
+.gb-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 22%);
+  pointer-events: none;
+}
+
+.gb-glass[data-intensity="raised"]   { background: var(--gb-glass-tint-raised); --gb-glass-blur: 10px; }
+.gb-glass[data-intensity="sunken"]   { background: var(--gb-glass-tint-sunken); --gb-glass-blur: 16px; }
+.gb-glass[data-intensity="active"]   { background: var(--gb-glass-tint-active); border-color: var(--gb-glass-edge-bright); }
+
+/* === PANEL CHROME ===
+   Composes gb-glass. Border + radius + padding only; identity-class lives in JSX. */
+.gb-panel {
   border-radius: var(--radius-panel);
   padding: 1.25rem;
   position: relative;
-  transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out);
+  transition: transform var(--dur-quick) var(--ease-out),
+              border-color var(--dur-quick) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
 }
 
 .gb-panel:hover {
@@ -86,16 +218,22 @@ body.gb-body {
 
 .gb-panel[data-state="pending"] {
   border-color: var(--color-pending);
-  box-shadow: 0 0 0 1px var(--color-accent-soft) inset;
+  box-shadow: 0 0 0 1px var(--color-accent-soft) inset, var(--gb-glass-shadow);
 }
 
 .gb-panel[data-state="committed"] {
-  animation: gb-pulse 320ms var(--ease-out);
+  animation: gb-pulse var(--dur-event) var(--ease-out);
+}
+
+.gb-panel[data-probe="active"] {
+  outline: 1px solid var(--color-pending);
+  outline-offset: -1px;
 }
 
 .gb-unit-label {
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  font-size: var(--gb-text-micro);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-fg-muted);
 }
@@ -106,12 +244,108 @@ body.gb-body {
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-/* Reduced-motion baked at the framework level — every transition gets neutered. */
+/* === PROBE FIELD HOST === */
+.gb-probe-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity var(--dur-base) var(--ease-dampen);
+}
+
+.gb-probe-field[data-pending="true"] {
+  opacity: 0.55;
+}
+
+.gb-probe-field-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.gb-bento-canvas {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+/* === BENTO BACKDROP ===
+   Two low-opacity radial blooms (cool blue + warm amber) under the probe field
+   so the glass panels have something nontrivial to refract. */
+.gb-canvas-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 30% 20%, rgba(107, 184, 255, 0.08), transparent 60%),
+    radial-gradient(40% 30% at 80% 80%, rgba(255, 184, 107, 0.06), transparent 60%),
+    var(--color-bg);
+}
+
+/* === LAYOUT REGIONS — glass chrome via backdrop-filter ===
+   App.tsx assigns gridArea; these classes carry the glass treatment + dividers. */
+.gb-cmd-host,
+.gb-tray-host,
+.gb-tline-host {
+  position: relative;
+  background: var(--gb-glass-tint-raised);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+.gb-inspector-host {
+  position: relative;
+  background: var(--gb-glass-tint-sunken);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-left: 1px solid var(--color-border);
+}
+
+.gb-cmd-host  { border-bottom: 1px solid var(--color-border); }
+.gb-tray-host { border-right:  1px solid var(--color-border); }
+.gb-tline-host { border-top:   1px solid var(--color-border); }
+
+/* === STATUS PILL === */
+.gb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--gb-status-h);
+  padding: 0 var(--gb-status-pad-x);
+  border-radius: var(--radius-pill);
+  background: var(--gb-glass-tint-raised);
+  border: 1px solid var(--color-border);
+  font-size: var(--gb-text-meta);
+  color: var(--color-fg);
+}
+
+.gb-pill-dot {
+  width: var(--gb-status-dot-size);
+  height: var(--gb-status-dot-size);
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* === REDUCED MOTION === */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

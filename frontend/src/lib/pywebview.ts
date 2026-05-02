@@ -7,6 +7,39 @@
  */
 import type { Analysis, Splice, SpliceCatalog, CaptionFraming } from '@/types/analysis'
 
+export interface ModelIdentity {
+  loaded: boolean
+  dataset_path?: string
+  n_samples?: number
+  accuracy?: number
+  n_flags?: number
+  protected_attributes?: string[]
+}
+
+export interface BiasFlag {
+  attribute: string
+  severity: 'HIGH' | 'MEDIUM' | 'LOW'
+  metric: string
+  value: number
+  threshold: number
+  message: string
+}
+
+export interface BiasReport {
+  dataset: { path: string; n_samples: number; n_features: number; n_train: number; n_test: number }
+  protected_attributes: string[]
+  baseline: { accuracy: number; metrics: Record<string, Record<string, number>> }
+  bias_flags: BiasFlag[]
+  recommendations: Array<{ priority: number; type: string; description: string; code: string }>
+}
+
+export interface RetuneReport {
+  source_report: string
+  n_flags: { HIGH?: number; MEDIUM?: number; LOW?: number }
+  predicted_params: Record<string, string | number | null>
+  rationale: string[]
+}
+
 declare global {
   interface Window {
     pywebview?: {
@@ -16,20 +49,38 @@ declare global {
         list_splices: () => Promise<SpliceCatalog>
         caption_for: (splice_id: string, framing: CaptionFraming) => Promise<string>
         echo: (msg: string) => Promise<string>
+        bias_report: () => Promise<BiasReport | null>
+        retune: () => Promise<RetuneReport | null>
+        fix_message: () => Promise<string | null>
+        model_identity: () => Promise<ModelIdentity>
       }
     }
   }
 }
 
-const PYWEBVIEW_BOOT_TIMEOUT_MS = 3000
+const PYWEBVIEW_BOOT_TIMEOUT_MS = 5000
+
+function isApiReady(): boolean {
+  return typeof window.pywebview?.api?.baseline === 'function'
+}
 
 function waitForPywebview(): Promise<boolean> {
   return new Promise((resolve) => {
-    if (window.pywebview?.api) return resolve(true)
+    if (isApiReady()) return resolve(true)
+    let done = false
+    const finish = (ok: boolean) => {
+      if (done) return
+      done = true
+      window.removeEventListener('pywebviewready', onReady)
+      resolve(ok)
+    }
+    const onReady = () => { if (isApiReady()) finish(true) }
+    window.addEventListener('pywebviewready', onReady)
+
     const start = performance.now()
     const tick = () => {
-      if (window.pywebview?.api) return resolve(true)
-      if (performance.now() - start > PYWEBVIEW_BOOT_TIMEOUT_MS) return resolve(false)
+      if (isApiReady()) return finish(true)
+      if (performance.now() - start > PYWEBVIEW_BOOT_TIMEOUT_MS) return finish(false)
       requestAnimationFrame(tick)
     }
     tick()
@@ -73,5 +124,25 @@ export const pywebview = {
   async echo(msg: string): Promise<string> {
     if (await pywebviewReady()) return window.pywebview!.api.echo(msg)
     return `pong (fallback): ${msg}`
+  },
+
+  async biasReport(): Promise<BiasReport | null> {
+    if (await pywebviewReady()) return window.pywebview!.api.bias_report()
+    return null
+  },
+
+  async retune(): Promise<RetuneReport | null> {
+    if (await pywebviewReady()) return window.pywebview!.api.retune()
+    return null
+  },
+
+  async fixMessage(): Promise<string | null> {
+    if (await pywebviewReady()) return window.pywebview!.api.fix_message()
+    return null
+  },
+
+  async modelIdentity(): Promise<ModelIdentity> {
+    if (await pywebviewReady()) return window.pywebview!.api.model_identity()
+    return { loaded: false }
   },
 }

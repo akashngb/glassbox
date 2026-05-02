@@ -1,0 +1,24 @@
+{
+  "_note": "Synthetic counterfactual sample descriptors per protected attribute. Mirrors the shape of Backboard's prober agent output. Each entry is a single human-readable summary; real prober output will include feature vectors too. Age axis is continuous; threshold splices target it.",
+  "sex": [
+    "white male, 47, masters, 55h/wk",
+    "female, 36, bachelors, 40h/wk",
+    "male, 52, doctorate, 60h/wk",
+    "female, 29, masters, 50h/wk",
+    "male, 41, bachelors, 45h/wk"
+  ],
+  "race": [
+    "black, 41, bachelors, 45h/wk",
+    "asian, 33, masters, 50h/wk",
+    "hispanic, 39, hs-grad, 42h/wk",
+    "white, 45, doctorate, 55h/wk",
+    "black, 38, masters, 48h/wk"
+  ],
+  "age": [
+    "applicant, 62, bachelors, 30h/wk",
+    "applicant, 58, masters, 35h/wk",
+    "applicant, 67, hs-grad, 28h/wk",
+    "applicant, 71, bachelors, 25h/wk",
+    "applicant, 55, doctorate, 40h/wk"
+  ]
+}

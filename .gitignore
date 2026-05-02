@@ -25,3 +25,5 @@ dist/
 adult.csv
 adult.data
 adult.test
+compas-scores-raw.csv
+retune.json

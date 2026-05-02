@@ -21,6 +21,10 @@ from pathlib import Path
 from typing import Any
 
 _FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_BIAS_REPORT_PATH = _PROJECT_ROOT / "bias_report.json"
+_RETUNE_PATH      = _PROJECT_ROOT / "retune.json"
+_FIX_MESSAGE_PATH = _PROJECT_ROOT / "fix_message.md"
 
 
 class GlassboxAPI:
@@ -95,6 +99,49 @@ class GlassboxAPI:
     def echo(self, msg: str) -> str:
         """Bridge sanity check: returns 'pong: <msg>'. Frontend calls this on boot."""
         return f"pong: {msg}"
+
+    def bias_report(self) -> dict | None:
+        """Return the bias_report.json produced by sisa.py at the project root.
+
+        Returns None when the audit hasn't been run (file missing). Frontend
+        treats None as "demo mode, fixtures only" and keeps the existing chrome.
+        """
+        if not _BIAS_REPORT_PATH.exists():
+            return None
+        with open(_BIAS_REPORT_PATH) as fh:
+            return json.load(fh)
+
+    def retune(self) -> dict | None:
+        """Return retune.json produced by retune.py: predicted hyperparam tweaks."""
+        if not _RETUNE_PATH.exists():
+            return None
+        with open(_RETUNE_PATH) as fh:
+            return json.load(fh)
+
+    def fix_message(self) -> str | None:
+        """Return the Gemini-generated fix_message.md as raw markdown text."""
+        if not _FIX_MESSAGE_PATH.exists():
+            return None
+        return _FIX_MESSAGE_PATH.read_text(encoding="utf-8")
+
+    def model_identity(self) -> dict:
+        """One-shot identity payload: dataset name, accuracy, flag count.
+
+        Cheap to call on boot; keeps the Inspector empty state honest about
+        whether real audit numbers are loaded or fixtures are in use.
+        """
+        report = self.bias_report()
+        if report is None:
+            return {"loaded": False}
+        ds = report.get("dataset", {})
+        return {
+            "loaded": True,
+            "dataset_path": ds.get("path"),
+            "n_samples": ds.get("n_samples"),
+            "accuracy": report.get("baseline", {}).get("accuracy"),
+            "n_flags": len(report.get("bias_flags", [])),
+            "protected_attributes": report.get("protected_attributes", []),
+        }
 
 
 def _fixture_id(head_id: str, splice: dict) -> str:

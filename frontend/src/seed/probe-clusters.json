@@ -1,0 +1,10 @@
+{
+  "_note": "Cluster centers encoding where bias hides in the demo. Tweak to tune the visual story arc without touching code. When Backboard's real prober is wired, this file is dev-only fallback. Age cluster gives the threshold splice somewhere to land.",
+  "clusters": [
+    { "x":  0.55, "y":  0.40, "attr": "sex",  "severity": 0.85, "label": "high-income males" },
+    { "x":  0.32, "y": -0.22, "attr": "race", "severity": 0.72, "label": "white-collar prediction skew" },
+    { "x": -0.45, "y":  0.55, "attr": "sex",  "severity": 0.61, "label": "low-confidence female positives" },
+    { "x": -0.18, "y": -0.55, "attr": "race", "severity": 0.78, "label": "race-conditioned occupation gap" },
+    { "x":  0.10, "y":  0.70, "attr": "age",  "severity": 0.74, "label": "older-applicant denial cluster" }
+  ]
+}

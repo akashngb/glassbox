@@ -11,6 +11,7 @@ import {
   useGlassboxState,
 } from '@/state/glassbox'
 import type { PanelId, Splice } from '@/types/analysis'
+import type { DragPhase } from '@/state/glassbox'
 import { pywebview } from './pywebview'
 
 export function useAnalysis() {
@@ -46,6 +47,14 @@ export function useAnalysis() {
     dispatch({ kind: 'hover', id })
   }, [dispatch])
 
+  const scrub = useCallback((nodeId: string) => {
+    dispatch({ kind: 'scrub', nodeId })
+  }, [dispatch])
+
+  const setDragPhase = useCallback((phase: DragPhase) => {
+    dispatch({ kind: 'drag-phase', phase })
+  }, [dispatch])
+
   return {
     head,
     ghost: state.pending?.ghost ?? null,
@@ -53,11 +62,14 @@ export function useAnalysis() {
     selection: state.selection,
     hovered: state.hovered,
     timeline: state.timeline,
+    dragPhase: state.dragPhase,
 
     stage,
     accept,
     reject,
     select,
     hover,
+    scrub,
+    setDragPhase,
   }
 }
