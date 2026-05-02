@@ -1,0 +1,64 @@
+{
+  "n_total": 45222,
+  "n_train": 36177,
+  "n_test": 9045,
+  "accuracy": 0.861,
+  "roc_auc": 0.9165,
+  "confusion_matrix": [
+    [
+      6453,
+      350
+    ],
+    [
+      907,
+      1335
+    ]
+  ],
+  "high_income_threshold": 0.7467621157664176,
+  "tpr_fpr_by_race": {
+    "White": {
+      "n": 7764,
+      "tpr": 0.6009,
+      "fpr": 0.0553,
+      "positive_rate": 0.1991
+    },
+    "Black": {
+      "n": 849,
+      "tpr": 0.4857,
+      "fpr": 0.0161,
+      "positive_rate": 0.0742
+    },
+    "Asian-Pac-Islander": {
+      "n": 268,
+      "tpr": 0.6301,
+      "fpr": 0.0923,
+      "positive_rate": 0.2388
+    },
+    "Other": {
+      "n": 68,
+      "tpr": 0.4444,
+      "fpr": 0.0339,
+      "positive_rate": 0.0882
+    },
+    "Amer-Indian-Eskimo": {
+      "n": 96,
+      "tpr": 0.5,
+      "fpr": 0.0227,
+      "positive_rate": 0.0625
+    }
+  },
+  "tpr_fpr_by_sex": {
+    "Female": {
+      "n": 2984,
+      "tpr": 0.4844,
+      "fpr": 0.0152,
+      "positive_rate": 0.0707
+    },
+    "Male": {
+      "n": 6061,
+      "tpr": 0.6162,
+      "fpr": 0.0743,
+      "positive_rate": 0.2432
+    }
+  }
+}

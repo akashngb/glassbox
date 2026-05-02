@@ -18,7 +18,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from glassbox.memory import SessionMemory
 
 _FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -30,10 +33,15 @@ _FIX_MESSAGE_PATH = _PROJECT_ROOT / "fix_message.md"
 class GlassboxAPI:
     """JS-callable surface. Every public method becomes window.pywebview.api.<name>."""
 
-    def __init__(self, model_path: str | None = None) -> None:
+    def __init__(
+        self,
+        model_path: str | None = None,
+        session: "SessionMemory | None" = None,
+    ) -> None:
         self.model_path = model_path
         self._window = None
         self._fixtures = self._load_fixtures()
+        self._session = session
 
     def bind_window(self, window: Any) -> None:
         self._window = window
@@ -142,6 +150,65 @@ class GlassboxAPI:
             "n_flags": len(report.get("bias_flags", [])),
             "protected_attributes": report.get("protected_attributes", []),
         }
+
+    # ---- session memory bridge ----
+
+    def session_info(self) -> dict:
+        if self._session is None:
+            return {"available": False, "resumed": False, "summary": None, "project_path": None}
+        return {
+            "available": True,
+            "resumed": self._session.resumed,
+            "summary": self._session.prior_summary,
+            "project_path": self._session.project_path,
+        }
+
+    def session_history(self, event_types: list[str] | None = None, limit: int = 200) -> list[dict]:
+        if self._session is None:
+            return []
+        return self._session.get_history(event_types=event_types, limit=limit)
+
+    def accept_splice(self, splice_id: str, summary: str = "", file_paths: list[str] | None = None) -> bool:
+        if self._session is None:
+            return False
+        self._session.log_event(
+            "diff_accepted",
+            {
+                "diff_id": splice_id,
+                "summary": summary,
+                "file_paths": file_paths or [],
+            },
+        )
+        return True
+
+    def reject_splice(self, splice_id: str, summary: str = "", reason: str = "") -> bool:
+        if self._session is None:
+            return False
+        self._session.log_event(
+            "diff_rejected",
+            {"diff_id": splice_id, "summary": summary, "reason": reason},
+        )
+        return True
+
+    def change_param(
+        self,
+        node_id: str,
+        param_name: str,
+        old_value: Any,
+        new_value: Any,
+    ) -> bool:
+        if self._session is None:
+            return False
+        self._session.log_event(
+            "param_changed",
+            {
+                "node_id": node_id,
+                "param_name": param_name,
+                "old_value": old_value,
+                "new_value": new_value,
+            },
+        )
+        return True
 
 
 def _fixture_id(head_id: str, splice: dict) -> str:
