@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glassbox · COMPAS Audit Session</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f0ece4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    font-size: 14px;
+    color: #1a1a1a;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Browser chrome bar ── */
+  .chrome {
+    background: #e8e4dc;
+    border-bottom: 1px solid #d4cfc6;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .chrome-dots { display: flex; gap: 6px; }
+  .chrome-dots span {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #ccc;
+  }
+  .chrome-nav { display: flex; gap: 4px; }
+  .chrome-nav button {
+    background: none; border: none; cursor: pointer;
+    color: #888; font-size: 15px; padding: 2px 5px;
+    border-radius: 4px;
+  }
+  .chrome-nav button:hover { background: #ddd; }
+  .chrome-tab {
+    background: #faf8f5;
+    border: 1px solid #d4cfc6;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    padding: 5px 14px;
+    font-size: 13px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .chrome-tab .favicon {
+    width: 14px; height: 14px;
+    background: #6366f1;
+    border-radius: 3px;
+    display: inline-block;
+    font-size: 9px;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
+  .chrome-new-tab {
+    background: none; border: none; cursor: pointer;
+    color: #888; font-size: 18px; padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ── Top nav bar ── */
+  .topnav {
+    background: #faf8f5;
+    border-bottom: 1px solid #e5e1d8;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #888;
+  }
+  .breadcrumb a { color: #888; text-decoration: none; }
+  .breadcrumb a:hover { color: #333; }
+  .breadcrumb .sep { color: #bbb; }
+  .breadcrumb .current { color: #333; font-weight: 500; }
+  .topnav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topnav-btn {
+    background: none; border: none; cursor: pointer;
+    color: #888; font-size: 13px; padding: 4px 8px;
+    border-radius: 5px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .topnav-btn:hover { background: #ede9e0; }
+  .ai-chat-toggle {
+    background: none; border: 1px solid #e0dbd2; cursor: pointer;
+    color: #555; font-size: 13px; padding: 4px 12px;
+    border-radius: 6px; font-weight: 500;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .ai-chat-toggle:hover { background: #ede9e0; }
+
+  /* ── Main layout ── */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Content pane ── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    background: #faf8f5;
+    padding: 52px 80px 80px;
+  }
+
+  .page-title {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1a1a1a;
+    margin-bottom: 28px;
+    line-height: 1.2;
+  }
+
+  .section-header {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 8px; }
+  .view-tab {
+    background: #edeae3;
+    border: 1px solid #ddd9d0;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .view-tab:hover { background: #e4e0d8; }
+  .toolbar-icons { display: flex; gap: 6px; }
+  .toolbar-icon {
+    background: none; border: none; cursor: pointer;
+    color: #aaa; font-size: 14px; padding: 3px 5px;
+    border-radius: 4px;
+  }
+  .toolbar-icon:hover { background: #ede9e0; color: #666; }
+  .btn-new {
+    background: #2f80ed;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .btn-new:hover { background: #2570d8; }
+
+  /* ── TL;DR ── */
+  .tldr {
+    background: #fff;
+    border: 1px solid #e5e1d8;
+    border-left: 3px solid #6366f1;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #555;
+    margin-bottom: 20px;
+  }
+  .tldr-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6366f1;
+    background: #eef2ff;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  .tldr code {
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 12px;
+    background: #f0ece4;
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #444;
+  }
+  .tldr strong { color: #1a1a1a; font-weight: 600; }
+
+  /* ── Table ── */
+  .table-wrap {
+    border: 1px solid #e5e1d8;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    background: #f7f4ef;
+    border-bottom: 1px solid #e5e1d8;
+    padding: 8px 16px;
+    text-align: left;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  thead th:not(:last-child) {
+    border-right: 1px solid #f0ece4;
+  }
+  tbody tr {
+    border-bottom: 1px solid #f0ece4;
+    transition: background 0.1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #faf7f2; }
+  td {
+    padding: 10px 16px;
+    vertical-align: middle;
+  }
+  td:not(:last-child) {
+    border-right: 1px solid #f5f2ec;
+  }
+
+  .event-cell {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13.5px;
+    color: #1a1a1a;
+    font-weight: 450;
+  }
+  .event-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .event-name { font-weight: 500; }
+  .event-sub {
+    font-size: 11.5px;
+    color: #aaa;
+    margin-top: 1px;
+  }
+
+  .detail-cell {
+    font-size: 12px;
+    color: #666;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    max-width: 260px;
+  }
+  .kv { display: flex; gap: 4px; flex-wrap: wrap; }
+  .kv-key { color: #aaa; }
+  .kv-val { color: #555; }
+  .arrow { color: #bbb; }
+
+  .ts-cell {
+    font-size: 11.5px;
+    color: #bbb;
+    white-space: nowrap;
+  }
+
+  /* ── Status badges ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .badge-accepted  { background: #eaf7f1; color: #1a8a52; }
+  .badge-accepted .badge-dot { background: #2db87a; }
+  .badge-rejected  { background: #fdf0f0; color: #c0392b; }
+  .badge-rejected .badge-dot { background: #e05c5c; }
+  .badge-param     { background: #eef3fd; color: #2563eb; }
+  .badge-param .badge-dot { background: #4a90e2; }
+  .badge-session   { background: #f3f3f3; color: #888; }
+  .badge-session .badge-dot { background: #aaa; }
+
+  /* ── Sync chip ── */
+  .sync-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: #6366f1;
+    background: #eef2ff;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-left: 6px;
+  }
+
+  /* ── Add row ── */
+  .add-row td {
+    color: #bbb;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 9px 16px;
+  }
+  .add-row:hover td { color: #888; background: #faf7f2; }
+
+  /* ── Right sidebar ── */
+  .sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: #faf8f5;
+    border-left: 1px solid #e5e1d8;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e1d8;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sidebar-icons { display: flex; gap: 4px; }
+  .sidebar-icon-btn {
+    background: none; border: none; cursor: pointer;
+    color: #bbb; font-size: 14px; padding: 3px 5px;
+    border-radius: 4px;
+  }
+  .sidebar-icon-btn:hover { background: #ede9e0; color: #666; }
+
+  .sidebar-body {
+    padding: 28px 20px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .magic-icon {
+    width: 52px; height: 52px;
+    background: #f0ece4;
+    border: 1px solid #e0dbd2;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    margin-bottom: 14px;
+  }
+  .magic-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 18px;
+    line-height: 1.4;
+  }
+
+  .sidebar-actions { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #444;
+    transition: background 0.1s;
+  }
+  .sidebar-action:hover { background: #ede9e0; }
+  .sidebar-action .sa-icon { font-size: 15px; color: #888; flex-shrink: 0; }
+  .sidebar-action .sa-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    background: #e8e3da;
+    color: #888;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .sidebar-action .sa-badge.new {
+    background: #eef3fd;
+    color: #2563eb;
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: #e5e1d8;
+    margin: 14px 0;
+  }
+
+  .sync-status {
+    background: #f0ece4;
+    border: 1px solid #e0dbd2;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 6px;
+  }
+  .sync-status-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #aaa;
+    margin-bottom: 10px;
+  }
+  .sync-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+  }
+  .sync-row:last-child { margin-bottom: 0; }
+  .sync-val { font-weight: 600; color: #333; }
+  .sync-val.green { color: #1a8a52; }
+  .sync-val.purple { color: #6366f1; }
+
+  .watermark-bar {
+    margin-top: 10px;
+    background: #e5e1d8;
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .watermark-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+    border-radius: 4px;
+    width: 83%;
+    transition: width 0.4s ease;
+  }
+  .watermark-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: #bbb;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Browser chrome -->
+<div class="chrome">
+  <div class="chrome-dots">
+    <span style="background:#ff5f57"></span>
+    <span style="background:#febc2e"></span>
+    <span style="background:#28c840"></span>
+  </div>
+  <div class="chrome-nav">
+    <button>&#8249;</button>
+    <button>&#8250;</button>
+  </div>
+  <div class="chrome-tab">
+    <span class="favicon">G</span>
+    Glassbox · COMPAS Audit Session
+  </div>
+  <button class="chrome-new-tab">+</button>
+</div>
+
+<!-- Top nav -->
+<div class="topnav">
+  <div class="breadcrumb">
+    <a href="#">Workspace</a>
+    <span class="sep">/</span>
+    <span class="current">COMPAS Audit Session</span>
+  </div>
+  <div class="topnav-right">
+    <button class="topnav-btn">Share</button>
+    <button class="topnav-btn">&#9733;</button>
+    <button class="topnav-btn">•••</button>
+    <button class="ai-chat-toggle">Backboard Sync &#8964;</button>
+  </div>
+</div>
+
+<!-- Main layout -->
+<div class="layout">
+
+  <!-- Content -->
+  <div class="content">
+    <h1 class="page-title">COMPAS Audit Session</h1>
+
+    <div class="section-header">
+      📋 Audit Events
+    </div>
+
+    <div class="tldr">
+      <span class="tldr-label">TL;DR</span>
+      This session began ~2 hours ago against <code>compas_model.py</code> with a baseline demographic parity difference of <strong>0.18</strong> and disparate impact ratio of <strong>0.42</strong>. The first change — unlearing high-confidence male positives — was accepted and its confidence threshold immediately tuned up from 0.75 to 0.80. A SMOTE oversampling approach targeting minority race was then tried and <strong>rejected</strong> for introducing too much variance in DPD. The session recovered with two accepted edits ~1 hour ago: rebalancing sample weights by sex and applying per-group decision thresholds, bringing the total to <strong>3 accepted, 1 rejected, 1 param change</strong>. Five of the six events have been synced to Backboard.io; one is pending.
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="view-tab">⊞ Events</div>
+        <div class="toolbar-icons">
+          <button class="toolbar-icon">⇅</button>
+          <button class="toolbar-icon">⚡</button>
+          <button class="toolbar-icon">⌕</button>
+          <button class="toolbar-icon">≡</button>
+        </div>
+      </div>
+      <button class="btn-new">New &#8964;</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:38%">Aa &nbsp; Event</th>
+            <th style="width:32%">⊙ &nbsp; Details</th>
+            <th style="width:18%">◎ &nbsp; Type</th>
+            <th style="width:12%">⊕</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- session_started -->
+          <tr>
+            <td>
+              <div class="event-cell">
+                <span class="event-icon">📄</span>
+                <div>
+                  <div class="event-name">Session Started</div>
+                  <div class="event-sub">compas_model.py</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="detail-cell">
+                <div class="kv">
+                  <span class="kv-key">dpd:</span>
+                  <span class="kv-val">0.18</span>
+                  &nbsp;
+                  <span class="kv-key">dir:</span>
+                  <span class="kv-val">0.42</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-session"><span class="badge-dot"></span>Session</span></td>
+            <td class="ts-cell">~2 hrs ago</td>
+          </tr>
+
+          <!-- diff_accepted: unlearn male -->
+          <tr>
+            <td>
+              <div class="event-cell">
+                <span class="event-icon">📄</span>
+                <div>
+                  <div class="event-name">Unlearn high-conf male positives</div>
+                  <div class="event-sub">unlearn-male-high-conf · compas_model.py</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="detail-cell">
+                <div class="kv">
+                  <span class="kv-key">diff_id:</span>
+                  <span class="kv-val">unlearn-male-high-conf</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-accepted"><span class="badge-dot"></span>Accepted<span class="sync-chip">✦ synced</span></span></td>
+            <td class="ts-cell">~2 hrs ago</td>
+          </tr>
+
+          <!-- param_changed -->
+          <tr>
+            <td>
+              <div class="event-cell">
+                <span class="event-icon">📄</span>
+                <div>
+                  <div class="event-name">Confidence threshold adjusted</div>
+                  <div class="event-sub">node: unlearn-male-high-conf</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="detail-cell">
+                <div class="kv">
+                  <span class="kv-key">confidence:</span>
+                  <span class="kv-val">0.75</span>
+                  <span class="arrow">→</span>
+                  <span class="kv-val">0.80</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-param"><span class="badge-dot"></span>Param Change<span class="sync-chip">✦ synced</span></span></td>
+            <td class="ts-cell">~2 hrs ago</td>
+          </tr>
+
+          <!-- diff_rejected: SMOTE -->
+          <tr>
+            <td>
+              <div class="event-cell">
+                <span class="event-icon">📄</span>
+                <div>
+                  <div class="event-name">SMOTE oversample minority race</div>
+                  <div class="event-sub">smote-race</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="detail-cell">
+                <div class="kv">
+                  <span class="kv-key">reason:</span>
+                  <span class="kv-val">too much variance in DPD</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-rejected"><span class="badge-dot"></span>Rejected<span class="sync-chip">✦ synced</span></span></td>
+            <td class="ts-cell">~1.5 hrs ago</td>
+          </tr>
+
+          <!-- diff_accepted: reweight-sex -->
+          <tr>
+            <td>
+              <div class="event-cell">
+                <span class="event-icon">📄</span>
+                <div>
+                  <div class="event-name">Rebalance sample weights by sex</div>
+                  <div class="event-sub">reweight-sex · compas_model.py</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="detail-cell">
+                <div class="kv">
+                  <span class="kv-key">diff_id:</span>
+                  <span class="kv-val">reweight-sex</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-accepted"><span class="badge-dot"></span>Accepted<span class="sync-chip">✦ synced</span></span></td>
+            <td class="ts-cell">~1 hr ago</td>
+          </tr>
+
+          <!-- diff_accepted: threshold-sex -->
+          <tr>
+            <td>
+              <div class="event-cell">
+                <span class="event-icon">📄</span>
+                <div>
+                  <div class="event-name">Per-group decision threshold (sex)</div>
+                  <div class="event-sub">threshold-sex · compas_model.py</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="detail-cell">
+                <div class="kv">
+                  <span class="kv-key">diff_id:</span>
+                  <span class="kv-val">threshold-sex</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-accepted"><span class="badge-dot"></span>Accepted<span class="sync-chip">✦ synced</span></span></td>
+            <td class="ts-cell">~1 hr ago</td>
+          </tr>
+
+        </tbody>
+        <tbody>
+          <tr class="add-row">
+            <td colspan="4">+ New event</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        ✦ Backboard Sync
+        <span style="font-size:10px;background:#eef2ff;color:#6366f1;padding:2px 6px;border-radius:4px;font-weight:600">Live</span>
+      </div>
+      <div class="sidebar-icons">
+        <button class="sidebar-icon-btn">⤢</button>
+        <button class="sidebar-icon-btn">▣</button>
+        <button class="sidebar-icon-btn">»</button>
+      </div>
+    </div>
+
+    <div class="sidebar-body">
+      <div class="magic-icon">✦</div>
+      <div class="magic-title">What shall we audit next?</div>
+
+      <div class="sidebar-actions">
+        <div class="sidebar-action">
+          <span class="sa-icon">⌕</span>
+          Query audit history
+        </div>
+        <div class="sidebar-action">
+          <span class="sa-icon">⊙</span>
+          Analyze fairness delta
+          <span class="sa-badge new">New</span>
+        </div>
+        <div class="sidebar-action">
+          <span class="sa-icon">▦</span>
+          Chart DPD over time
+          <span class="sa-badge new">New</span>
+        </div>
+        <div class="sidebar-action">
+          <span class="sa-icon">⇅</span>
+          Filter &amp; sort events
+          <span class="sa-badge">↑</span>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sync-status">
+        <div class="sync-status-title">Backboard.io Status</div>
+
+        <div class="sync-row">
+          <span>Assistant</span>
+          <span class="sync-val purple">glassbox::compas</span>
+        </div>
+        <div class="sync-row">
+          <span>Local events</span>
+          <span class="sync-val">6</span>
+        </div>
+        <div class="sync-row">
+          <span>Synced to cloud</span>
+          <span class="sync-val green">5 / 6</span>
+        </div>
+        <div class="sync-row">
+          <span>Pending</span>
+          <span class="sync-val">1</span>
+        </div>
+        <div class="sync-row">
+          <span>Storage</span>
+          <span class="sync-val" style="font-size:11px">~/.glassbox/sessions/</span>
+        </div>
+
+        <div class="watermark-bar">
+          <div class="watermark-fill"></div>
+        </div>
+        <div class="watermark-label">
+          <span>synced_count cursor</span>
+          <span>5 / 6</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
