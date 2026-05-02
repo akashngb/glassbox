@@ -1,0 +1,70 @@
+{
+  "n_total": 6172,
+  "n_train": 4937,
+  "n_test": 1235,
+  "accuracy": 0.7069,
+  "roc_auc": 0.7373,
+  "confusion_matrix": [
+    [
+      528,
+      145
+    ],
+    [
+      217,
+      345
+    ]
+  ],
+  "high_risk_threshold": 0.7588123553493401,
+  "tpr_fpr_by_race": {
+    "Hispanic": {
+      "n": 94,
+      "tpr": 0.4,
+      "fpr": 0.1429,
+      "positive_rate": 0.266
+    },
+    "African-American": {
+      "n": 641,
+      "tpr": 0.7567,
+      "fpr": 0.3158,
+      "positive_rate": 0.5476
+    },
+    "Other": {
+      "n": 65,
+      "tpr": 0.2778,
+      "fpr": 0.1064,
+      "positive_rate": 0.1538
+    },
+    "Asian": {
+      "n": 7,
+      "tpr": 0.0,
+      "fpr": 0.0,
+      "positive_rate": 0.0
+    },
+    "Caucasian": {
+      "n": 427,
+      "tpr": 0.4161,
+      "fpr": 0.1391,
+      "positive_rate": 0.2436
+    },
+    "Native American": {
+      "n": 1,
+      "tpr": 0.0,
+      "fpr": 0.0,
+      "positive_rate": 0.0
+    }
+  },
+  "tpr_fpr_by_sex": {
+    "Male": {
+      "n": 1002,
+      "tpr": 0.652,
+      "fpr": 0.2552,
+      "positive_rate": 0.4441
+    },
+    "Female": {
+      "n": 233,
+      "tpr": 0.4,
+      "fpr": 0.0743,
+      "positive_rate": 0.1931
+    }
+  }
+}
