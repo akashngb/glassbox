@@ -10,12 +10,14 @@ import {
   useGlassboxDispatch,
   useGlassboxState,
 } from '@/state/glassbox'
+import { useSession } from '@/state/session'
 import type { PanelId, Splice } from '@/types/analysis'
 import { pywebview } from './pywebview'
 
 export function useAnalysis() {
   const state = useGlassboxState()
   const dispatch = useGlassboxDispatch()
+  const { bumpHistory } = useSession()
   const head = state.timeline.length > 0 ? headOf(state).analysis : state.baseline
 
   const stage = useCallback(async (splice: Splice, from: 'tray' | 'command-bar' = 'tray') => {
@@ -30,13 +32,19 @@ export function useAnalysis() {
 
   const accept = useCallback(async () => {
     if (!state.pending) return
-    const caption = await pywebview.captionFor(state.pending.splice.id, 'committed')
+    const splice = state.pending.splice
+    const caption = await pywebview.captionFor(splice.id, 'committed')
     dispatch({ kind: 'accept', caption })
-  }, [state, dispatch])
+    pywebview.acceptSplice(splice.id, splice.label).then(() => bumpHistory())
+  }, [state, dispatch, bumpHistory])
 
   const reject = useCallback(() => {
+    const splice = state.pending?.splice
     dispatch({ kind: 'reject' })
-  }, [dispatch])
+    if (splice) {
+      pywebview.rejectSplice(splice.id, splice.label, '').then(() => bumpHistory())
+    }
+  }, [state, dispatch, bumpHistory])
 
   const select = useCallback((id: PanelId | null) => {
     dispatch({ kind: 'select', id })
