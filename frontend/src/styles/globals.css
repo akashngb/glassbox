@@ -25,11 +25,25 @@
   --color-bad:      #ef4444;
   --color-good:     #10b981;
 
+  /* === PRISM / CHROMATIC ABERRATION === */
+  --color-prism-r: #ff5e8a;
+  --color-prism-g: #6dffb5;
+  --color-prism-b: #6da1ff;
+  --color-prism-c: #5ce0e0;
+  --color-prism-m: #d96bff;
+  --color-prism-y: #ffd66b;
+
+  --color-iris-base:    #cdd6ff;
+  --color-iris-edge-a:  #b9c5ff;
+  --color-iris-edge-b:  #ffd2f1;
+
   /* === TYPE === */
   --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 
-  --gb-text-headline: 28px;
+  --gb-text-headline: 36px;
+  --gb-text-display:  56px;
+  --gb-text-metric:   34px;
   --gb-text-body:     13px;
   --gb-text-meta:     11px;
   --gb-text-micro:    10px;
@@ -109,6 +123,8 @@
   --gb-glass-edge-bright: rgba(255, 184, 107, 0.35);
   --gb-glass-shadow:      0 8px 28px -12px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.03) inset;
   --gb-glass-refraction:  inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+  --gb-glass-iridescence: blur(14px) saturate(160%) hue-rotate(2deg);
+  --gb-glass-soft:        blur(10px) saturate(140%);
 
   /* === SPLICE FAMILY COLORS — only used on tile chrome, never on data viz === */
   --gb-family-unlearn:    var(--color-bad);
@@ -149,13 +165,32 @@ html, body, #root {
 }
 
 body.gb-body {
-  background: var(--color-bg);
+  background:
+    radial-gradient(1200px 800px at 18% -10%, color-mix(in oklab, var(--color-prism-b) 14%, transparent) 0%, transparent 60%),
+    radial-gradient(900px 700px at 95% 110%, color-mix(in oklab, var(--color-prism-m) 10%, transparent) 0%, transparent 55%),
+    radial-gradient(700px 500px at 50% 50%, color-mix(in oklab, var(--color-iris-base) 6%, transparent) 0%, transparent 60%),
+    var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans);
   font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow: hidden;
+}
+
+html.light {
+  --color-bg:        #eef0f7;
+  --color-surface:   #ffffffd9;
+  --color-elevated:  #ffffffee;
+  --color-border:    #d6deec;
+  --color-fg:        #0e1422;
+  --color-fg-muted:  #4a5568;
+  --color-fg-subtle: #7b8699;
+  --color-accent:        #6e57ff;
+  --color-accent-soft:   #6e57ff22;
+  --color-accent-strong: #4d36e0;
+  --color-pending:  #6e57ff;
+  --color-baseline: #94a3b8;
 }
 
 *:focus-visible {
@@ -206,14 +241,53 @@ body.gb-body {
   border-radius: var(--radius-panel);
   padding: 1.25rem;
   position: relative;
+  background: color-mix(in oklab, var(--color-surface) 72%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-border) 80%, var(--color-iris-base) 20%);
+  backdrop-filter: var(--gb-glass-iridescence);
+  -webkit-backdrop-filter: var(--gb-glass-iridescence);
+  overflow: hidden;
+  isolation: isolate;
   transition: transform var(--dur-quick) var(--ease-out),
               border-color var(--dur-quick) var(--ease-out),
               box-shadow var(--dur-base) var(--ease-out);
 }
 
+.gb-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--color-prism-c) 60%, transparent),
+    transparent 30%,
+    transparent 70%,
+    color-mix(in oklab, var(--color-prism-m) 50%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.gb-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,0.08), transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gb-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
 .gb-panel:hover {
   transform: translateY(-1px);
-  border-color: var(--color-fg-subtle);
+  border-color: color-mix(in oklab, var(--color-fg-subtle) 50%, var(--color-iris-edge-a) 50%);
 }
 
 .gb-panel[data-state="pending"] {

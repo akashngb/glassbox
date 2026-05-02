@@ -1,23 +1,72 @@
+import { useEffect, useState } from 'react'
 import { useAnalysis } from '@/lib/useAnalysis'
+import { pywebview } from '@/lib/pywebview'
 import { Panel } from './Panel'
 import { Wave } from './Wave'
+import { RefractionScene } from '@/particles/RefractionScene'
+import { SparklesCore } from '@/components/ui/sparkles'
+import type { Splice, SpliceCatalog } from '@/types/analysis'
 
 export function BentoCanvas() {
-  const { head, ghost } = useAnalysis()
+  const { head, ghost, pending, stage } = useAnalysis()
+  const idle = !pending
+  const [catalog, setCatalog] = useState<SpliceCatalog>([])
+  const [dropArmed, setDropArmed] = useState(false)
+
+  useEffect(() => {
+    pywebview.listSplices().then(setCatalog)
+  }, [])
+
+  const findSplice = (id: string): Splice | undefined => catalog.find(s => s.id === id)
 
   return (
     <div
-      className="gb-bento-canvas grid h-full gap-3 p-4"
-      style={{
-        gridTemplateColumns: '1fr 1.4fr',
-        gridTemplateRows: '1fr 1fr 1fr',
-        gridTemplateAreas: `
-          "dpd      accuracy"
-          "dir      accuracy"
-          "eod      flags"
-        `,
+      className="relative h-full w-full"
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('application/x-glassbox-splice')) {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'copy'
+          if (!dropArmed) setDropArmed(true)
+        }
       }}
+      onDragLeave={(e) => {
+        if (e.currentTarget === e.target) setDropArmed(false)
+      }}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDropArmed(false)
+        const id = e.dataTransfer.getData('application/x-glassbox-splice')
+        const splice = id && findSplice(id)
+        if (splice) stage(splice, 'tray')
+      }}
+      data-drop-armed={dropArmed}
     >
+      <div className="absolute inset-0 -z-10 pointer-events-none">
+        <RefractionScene />
+      </div>
+      {idle && (
+        <SparklesCore
+          background="transparent"
+          minSize={0.4}
+          maxSize={1.2}
+          particleDensity={45}
+          particleColor="#cdd6ff"
+          speed={0.8}
+          className="absolute inset-0 -z-10 pointer-events-none opacity-55 transition-opacity duration-500"
+        />
+      )}
+      <div
+        className="gb-bento-canvas grid h-full gap-3 p-4 relative z-10"
+        style={{
+          gridTemplateColumns: '1fr 1.4fr',
+          gridTemplateRows: '1fr 1fr 1fr',
+          gridTemplateAreas: `
+            "dpd      accuracy"
+            "dir      accuracy"
+            "eod      flags"
+          `,
+        }}
+      >
       <div style={{ gridArea: 'dpd' }}>
         <Panel
           id="dpd"
@@ -104,6 +153,7 @@ export function BentoCanvas() {
             )}
           </ul>
         </Panel>
+      </div>
       </div>
     </div>
   )

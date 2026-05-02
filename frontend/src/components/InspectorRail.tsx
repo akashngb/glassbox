@@ -4,6 +4,7 @@ import { useAnalysis } from '@/lib/useAnalysis'
 import { tokens } from '@/lib/tokens'
 import { pywebview, type ModelIdentity } from '@/lib/pywebview'
 import { Caption } from './Caption'
+import { LiquidButton, MetalButton } from '@/components/ui/liquid-glass-button'
 
 export function InspectorRail() {
   const { pending, accept, reject, selection, scrub, timeline } = useAnalysis()
@@ -17,6 +18,11 @@ export function InspectorRail() {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (e.key === 'Enter' && pending && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        accept()
+        return
+      }
       const meta = e.metaKey || e.ctrlKey
       if (!meta || e.key.toLowerCase() !== 'z' || e.shiftKey) return
       if (timeline.length <= 1) return
@@ -25,7 +31,7 @@ export function InspectorRail() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [scrub, timeline])
+  }, [scrub, timeline, pending, accept])
 
   return (
     <div className="flex h-full flex-col p-4 gap-4">
@@ -53,18 +59,12 @@ export function InspectorRail() {
             <Caption text={pending.caption} framing="accept" />
 
             <div className="mt-auto flex gap-2">
-              <button
-                onClick={accept}
-                className="flex-1 rounded-md bg-[var(--color-accent)] text-[var(--color-bg)] px-3 py-2 text-[13px] font-bold hover:bg-[var(--color-accent-strong)] transition-colors"
-              >
+              <LiquidButton onClick={accept} size="lg" className="flex-1">
                 Accept
-              </button>
-              <button
-                onClick={reject}
-                className="flex-1 rounded-md border border-[var(--color-border)] text-[var(--color-fg-muted)] px-3 py-2 text-[13px] hover:border-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] transition-colors"
-              >
+              </LiquidButton>
+              <MetalButton onClick={reject} className="flex-1">
                 Reject
-              </button>
+              </MetalButton>
             </div>
             <div className="gb-unit-label flex items-center gap-3 text-[var(--color-fg-subtle)]">
               <span>⌘Z scrub back</span>

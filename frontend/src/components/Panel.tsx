@@ -45,14 +45,19 @@ export function Panel({ id, title, unit, children, metric, subline }: PanelProps
       transition={tokens.springChrome}
     >
       <header className="flex items-baseline justify-between">
-        <div className="text-[12px] font-bold tracking-wide text-[var(--color-fg)]">
+        <div className="text-[12px] font-bold tracking-wide text-[var(--color-fg)] uppercase">
           {title}
         </div>
         {unit && <div className="gb-unit-label">{unit}</div>}
       </header>
 
       <div className="flex items-baseline gap-2">
-        <div className="gb-num text-[28px] font-semibold leading-none">{metric}</div>
+        <div
+          className="gb-num font-semibold leading-none"
+          style={{ fontSize: 'var(--gb-text-headline)' }}
+        >
+          {metric}
+        </div>
         {subline && <div className="text-[11px] text-[var(--color-fg-muted)]">{subline}</div>}
       </div>
 

@@ -20,6 +20,8 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from glassbox import adapter
+
 if TYPE_CHECKING:
     from glassbox.memory import SessionMemory
 
@@ -55,16 +57,44 @@ class GlassboxAPI:
                 bundle[f.stem] = json.load(fh)
         return bundle
 
+    def _live_baseline(self) -> dict | None:
+        report = self._read_bias_report()
+        if report is None:
+            return None
+        return adapter.baseline_analysis(report)
+
+    def _read_bias_report(self) -> dict | None:
+        if not _BIAS_REPORT_PATH.exists():
+            return None
+        try:
+            with open(_BIAS_REPORT_PATH) as fh:
+                return json.load(fh)
+        except (json.JSONDecodeError, OSError):
+            return None
+
     def baseline(self) -> dict:
-        """Return the baseline analysis (no splices applied). Demo entry point."""
+        """Return the baseline analysis (no splices applied). Demo entry point.
+
+        Live audit (bias_report.json) wins; fixtures only when no audit is loadable.
+        """
+        live = self._live_baseline()
+        if live is not None:
+            return live
         return self._fixtures.get("baseline", _empty_analysis())
 
     def apply_splice(self, head_id: str, splice: dict) -> dict:
         """Return the analysis that results from applying `splice` to the state with `head_id`.
 
-        Phase 1 lookup: fixture key = f"{head_id}__{splice['kind']}_{splice_disambiguator(splice)}".
-        Phase 3 will dispatch to the real sisa.py pipeline.
+        Live mode: derive the post-splice analysis from the adapter using the
+        primitive's published clinical effect on each panel. Same (head_id,
+        splice_id) tuple always returns the same numbers.
+
+        Fixture mode: look up the pre-baked fixture by composite key.
         """
+        report = self._read_bias_report()
+        if report is not None:
+            base = adapter.baseline_analysis(report)
+            return adapter.splice_analysis(report, base, head_id, splice)
         fixture_id = _fixture_id(head_id, splice)
         if fixture_id in self._fixtures:
             return self._fixtures[fixture_id]
@@ -114,10 +144,7 @@ class GlassboxAPI:
         Returns None when the audit hasn't been run (file missing). Frontend
         treats None as "demo mode, fixtures only" and keeps the existing chrome.
         """
-        if not _BIAS_REPORT_PATH.exists():
-            return None
-        with open(_BIAS_REPORT_PATH) as fh:
-            return json.load(fh)
+        return self._read_bias_report()
 
     def retune(self) -> dict | None:
         """Return retune.json produced by retune.py: predicted hyperparam tweaks."""
@@ -141,15 +168,7 @@ class GlassboxAPI:
         report = self.bias_report()
         if report is None:
             return {"loaded": False}
-        ds = report.get("dataset", {})
-        return {
-            "loaded": True,
-            "dataset_path": ds.get("path"),
-            "n_samples": ds.get("n_samples"),
-            "accuracy": report.get("baseline", {}).get("accuracy"),
-            "n_flags": len(report.get("bias_flags", [])),
-            "protected_attributes": report.get("protected_attributes", []),
-        }
+        return adapter.project_identity(report)
 
     # ---- session memory bridge ----
 
