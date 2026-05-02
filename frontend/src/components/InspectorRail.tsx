@@ -213,15 +213,18 @@ function AcceptedFooter({ entries }: { entries: AcceptedSpliceEntry[] }) {
         </div>
       </div>
       <ul className="space-y-1">
-        {entries.slice(-4).map((e, i) => (
-          <li
-            key={`${e.id}-${i}`}
-            className="text-[length:var(--gb-text-meta)] text-[var(--color-fg-muted)] truncate"
-          >
-            <span className="text-[var(--color-fg-subtle)]">_splice_{entries.indexOf(e)} </span>
-            {e.label}
-          </li>
-        ))}
+        {(() => {
+          const offset = Math.max(0, entries.length - 4)
+          return entries.slice(-4).map((entry, i) => (
+            <li
+              key={`${entry.id}-${offset + i}`}
+              className="text-[length:var(--gb-text-meta)] text-[var(--color-fg-muted)] truncate"
+            >
+              <span className="text-[var(--color-fg-subtle)]">_splice_{offset + i} </span>
+              {entry.label}
+            </li>
+          ))
+        })()}
       </ul>
     </div>
   )

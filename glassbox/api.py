@@ -299,9 +299,8 @@ def _fixture_id(head_id: str, splice: dict) -> str:
 _PRIMITIVE_RENDERERS: dict[str, str] = {
     "unlearn": (
         "def _splice_{idx}(X, y, sample_weight=None):\n"
-        "    # {label}\n"
-        "    # Drop high-confidence positives where {attribute}=={priv} (max {max_pct:.0%}).\n"
-        "    mask = (X[{attribute!r}] == {priv!r}) & (y == 1)\n"
+        '    """{label}"""\n'
+        "    mask = (X[{attribute!r}] == {privileged_value!r}) & (y == 1)\n"
         "    keep_n = int(len(X) - min(int(len(X) * {max_pct}), int(mask.sum())))\n"
         "    keep_idx = X.index[~mask].tolist() + X.index[mask].tolist()[: max(0, keep_n - (~mask).sum())]\n"
         "    keep_idx = sorted(set(keep_idx))\n"
@@ -309,8 +308,7 @@ _PRIMITIVE_RENDERERS: dict[str, str] = {
     ),
     "reweight": (
         "def _splice_{idx}(X, y, sample_weight=None):\n"
-        "    # {label}\n"
-        "    # Reweight inversely proportional to group frequency on attribute={attribute!r}.\n"
+        '    """{label}"""\n'
         "    counts = X[{attribute!r}].value_counts()\n"
         "    weights = 1.0 / X[{attribute!r}].map(counts)\n"
         "    weights = weights * (len(X) / weights.sum())\n"
@@ -320,8 +318,7 @@ _PRIMITIVE_RENDERERS: dict[str, str] = {
     ),
     "smote": (
         "def _splice_{idx}(X, y, sample_weight=None):\n"
-        "    # {label}\n"
-        "    # Oversample minority {attribute!r} groups using SMOTENC for mixed dtypes.\n"
+        '    """{label}"""\n'
         "    from imblearn.over_sampling import SMOTENC\n"
         "    cat_cols = [i for i, c in enumerate(X.columns) if X[c].dtype == 'object' or c == {attribute!r}]\n"
         "    smote = SMOTENC(categorical_features=cat_cols, random_state=42)\n"
@@ -330,16 +327,14 @@ _PRIMITIVE_RENDERERS: dict[str, str] = {
     ),
     "threshold": (
         "def _splice_{idx}(X, y, sample_weight=None):\n"
-        "    # {label}\n"
-        "    # Mark per-group decision threshold; applied at predict time, not training time.\n"
+        '    """{label}"""\n'
         "    X = X.copy()\n"
         "    X.attrs['glassbox_threshold'] = {{'attribute': {attribute!r}, 'target_rate': {target_rate}}}\n"
         "    return X, y, sample_weight\n"
     ),
     "fairlearn": (
         "def _splice_{idx}(X, y, sample_weight=None):\n"
-        "    # {label}\n"
-        "    # Mark fairlearn constraint; wrap the estimator with ExponentiatedGradient at fit time.\n"
+        '    """{label}"""\n'
         "    X = X.copy()\n"
         "    X.attrs['glassbox_fairlearn'] = {{'attribute': {attribute!r}, 'constraint': {constraint!r}}}\n"
         "    return X, y, sample_weight\n"
@@ -369,13 +364,13 @@ def _render_accepted_module(accepted: list[dict]) -> str:
         args = entry.get("args", {}) or {}
         template = _PRIMITIVE_RENDERERS.get(kind, _PRIMITIVE_RENDERERS["reweight"])
         ctx = {
-            "idx":         idx,
-            "label":       entry.get("label", entry.get("id", "")),
-            "attribute":   args.get("attribute", "sex"),
-            "max_pct":     args.get("max_pct", 0.05),
-            "priv":        args.get("priv", "Male"),
-            "target_rate": args.get("target_rate", 0.30),
-            "constraint":  args.get("constraint", "DemographicParity"),
+            "idx":              idx,
+            "label":            entry.get("label", entry.get("id", "")),
+            "attribute":        args.get("attribute", "sex"),
+            "max_pct":          args.get("max_pct", 0.05),
+            "privileged_value": args.get("privileged_value", "Male"),
+            "target_rate":      args.get("target_rate", 0.30),
+            "constraint":       args.get("constraint", "DemographicParity"),
         }
         body_parts.append(template.format(**ctx))
 

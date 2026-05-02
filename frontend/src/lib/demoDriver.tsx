@@ -19,15 +19,13 @@ export function DemoDriver() {
   const { stage, accept, reject } = useAnalysis()
 
   useEffect(() => {
-    let pendingPromise: Promise<unknown> | null = null
     window.__glassboxDemo = {
       ready: true,
       async stage(spliceId: string) {
         const catalog = await pywebview.listSplices()
         const splice = catalog.find((s) => s.id === spliceId)
         if (!splice) throw new Error(`unknown splice ${spliceId}`)
-        pendingPromise = stage(splice, 'tray')
-        await pendingPromise
+        await stage(splice, 'tray')
       },
       async accept() {
         await accept()
