@@ -463,27 +463,27 @@ def print_report(report: dict) -> None:
 
     for attr, m in bl["metrics"].items():
         print(f"\n  [{attr.upper()}]")
-        print(f"    Positive rate  —  privileged: {m['positive_rate_privileged']:.3f}  "
+        print(f"    Positive rate  --  privileged: {m['positive_rate_privileged']:.3f}  "
               f"unprivileged: {m['positive_rate_unprivileged']:.3f}")
         print(f"    Demographic parity diff : {m['demographic_parity_diff']:+.3f}  "
-              f"(threshold ±{DPD_THRESHOLD})")
+              f"(threshold +/-{DPD_THRESHOLD})")
         print(f"    Disparate impact ratio  : {m['disparate_impact_ratio']:.3f}  "
-              f"(threshold ≥{DIR_THRESHOLD})")
+              f"(threshold >={DIR_THRESHOLD})")
         print(f"    Equal opportunity diff  : {m['equal_opportunity_diff']:+.3f}  "
-              f"(threshold ±{EOD_THRESHOLD})")
+              f"(threshold +/-{EOD_THRESHOLD})")
 
     print(f"\n  BIAS FLAGS  ({len(report['bias_flags'])})")
     for flag in report["bias_flags"]:
         print(f"    [{flag['severity']:<6}] {flag['message']}")
     if not report["bias_flags"]:
-        print("    None — all metrics within thresholds")
+        print("    None -- all metrics within thresholds")
 
     n_cands = sum(len(v) for v in report["unlearn_candidates"].values())
     print(f"\nUnlearn candidates : {n_cands} training samples flagged")
 
     if pu:
         delta = pu["accuracy"] - bl["accuracy"]
-        print(f"\nPost-unlearn accuracy : {pu['accuracy']:.4f}  (Δ = {delta:+.4f})")
+        print(f"\nPost-unlearn accuracy : {pu['accuracy']:.4f}  (delta = {delta:+.4f})")
         for attr, m in pu["metrics"].items():
             print(f"  [{attr.upper()}]  DPD: {m['demographic_parity_diff']:+.3f}  "
                   f"DIR: {m['disparate_impact_ratio']:.3f}  "
@@ -534,7 +534,7 @@ if __name__ == "__main__":
         post_acc     = accuracy_score(y_test, y_pred_post)
         post_metrics = compute_bias_metrics(y_test, y_pred_post, prot_test, attr_names)
     else:
-        print("\nNo unlearn candidates identified — bias within thresholds.")
+        print("\nNo unlearn candidates identified -- bias within thresholds.")
 
     # 5. Ranked code-fix recommendations
     recommendations = generate_recommendations(flags, attr_names)
