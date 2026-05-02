@@ -6,6 +6,7 @@
  * Python booted. In production, the real bridge takes over.
  */
 import type { Analysis, Splice, SpliceCatalog, CaptionFraming } from '@/types/analysis'
+import type { SessionInfo } from '@/state/session'
 
 declare global {
   interface Window {
@@ -16,9 +17,20 @@ declare global {
         list_splices: () => Promise<SpliceCatalog>
         caption_for: (splice_id: string, framing: CaptionFraming) => Promise<string>
         echo: (msg: string) => Promise<string>
+        session_info: () => Promise<SessionInfo>
+        session_history: (event_types?: string[] | null, limit?: number) => Promise<SessionEvent[]>
+        accept_splice: (splice_id: string, summary: string, file_paths: string[]) => Promise<boolean>
+        reject_splice: (splice_id: string, summary: string, reason: string) => Promise<boolean>
+        change_param: (node_id: string, param_name: string, old_value: unknown, new_value: unknown) => Promise<boolean>
       }
     }
   }
+}
+
+export interface SessionEvent {
+  event_type: 'session_started' | 'diff_accepted' | 'diff_rejected' | 'param_changed' | 'agent_run' | string
+  payload: Record<string, unknown>
+  timestamp: number
 }
 
 const PYWEBVIEW_BOOT_TIMEOUT_MS = 3000
@@ -73,5 +85,32 @@ export const pywebview = {
   async echo(msg: string): Promise<string> {
     if (await pywebviewReady()) return window.pywebview!.api.echo(msg)
     return `pong (fallback): ${msg}`
+  },
+
+  // ---- session memory ----
+
+  async sessionInfo(): Promise<SessionInfo> {
+    if (await pywebviewReady()) return window.pywebview!.api.session_info()
+    return { available: false, resumed: false, summary: null, project_path: null }
+  },
+
+  async sessionHistory(eventTypes: string[] | null = null, limit = 200): Promise<SessionEvent[]> {
+    if (await pywebviewReady()) return window.pywebview!.api.session_history(eventTypes, limit)
+    return []
+  },
+
+  async acceptSplice(spliceId: string, summary = '', filePaths: string[] = []): Promise<boolean> {
+    if (await pywebviewReady()) return window.pywebview!.api.accept_splice(spliceId, summary, filePaths)
+    return false
+  },
+
+  async rejectSplice(spliceId: string, summary = '', reason = ''): Promise<boolean> {
+    if (await pywebviewReady()) return window.pywebview!.api.reject_splice(spliceId, summary, reason)
+    return false
+  },
+
+  async changeParam(nodeId: string, paramName: string, oldValue: unknown, newValue: unknown): Promise<boolean> {
+    if (await pywebviewReady()) return window.pywebview!.api.change_param(nodeId, paramName, oldValue, newValue)
+    return false
   },
 }

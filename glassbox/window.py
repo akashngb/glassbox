@@ -7,6 +7,7 @@ from pathlib import Path
 import webview
 
 from glassbox.api import GlassboxAPI
+from glassbox.memory import SessionMemory
 
 _WINDOW_TITLE = "Glassbox"
 _WINDOW_SIZE = (1280, 820)
@@ -31,8 +32,12 @@ def _resolve_frontend_url(dev: bool) -> str:
     return str(bundle)
 
 
-def open_window(model_path: str | None = None, dev: bool = False) -> None:
-    api = GlassboxAPI(model_path=model_path)
+def open_window(
+    model_path: str | None = None,
+    dev: bool = False,
+    session: SessionMemory | None = None,
+) -> None:
+    api = GlassboxAPI(model_path=model_path, session=session)
     url = _resolve_frontend_url(dev)
 
     window = webview.create_window(
