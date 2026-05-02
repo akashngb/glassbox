@@ -1,19 +1,22 @@
 """
 Bias-aware SISA pipeline — backend for the VS Code bias-visualizer extension.
+Dataset: ProPublica COMPAS Recidivism (compas-scores-raw.csv)
 
 Workflow
 --------
-1.  Load & preprocess adult.csv
-2.  Extract protected attributes (sex, race) as binary columns BEFORE encoding
-3.  Train a baseline LogisticRegression
-4.  Compute fairness metrics per protected attribute on the test set
-5.  Flag violations: demographic parity, disparate impact (80% rule), equal opportunity
-6.  Identify training samples to unlearn — high-confidence positive predictions
+1.  Load compas-scores-raw.csv; filter to completed Risk-of-Recidivism rows
+2.  Derive age from DateOfBirth / Screening_Date
+3.  Extract protected attributes (Sex_Code_Text, Ethnic_Code_Text) as binary
+    columns BEFORE encoding so group membership is not scrambled
+4.  Train a baseline LogisticRegression
+5.  Compute fairness metrics per protected attribute on the test set
+6.  Flag violations: demographic parity, disparate impact (80% rule), equal opportunity
+7.  Identify training samples to unlearn — high-confidence positive predictions
     in the privileged group that are inflating the positive-prediction-rate gap
-7.  Use SISA to retrain only the affected shards (efficient machine unlearning)
-8.  Recompute metrics post-unlearn and measure improvement
-9.  Generate ranked code-fix recommendations with copy-paste snippets
-10. Write bias_report.json for the VS Code extension to render
+8.  Use SISA to retrain only the affected shards (efficient machine unlearning)
+9.  Recompute metrics post-unlearn and measure improvement
+10. Generate ranked code-fix recommendations with copy-paste snippets
+11. Write bias_report.json for the VS Code extension to render
 """
 import os
 import json
@@ -28,7 +31,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-DATASET_PATH    = "adult.csv"
+DATASET_PATH    = "compas-scores-raw.csv"
 S               = 5       # SISA shards
 R               = 5       # SISA slices per shard
 MODELS_DIR      = "models"
@@ -46,16 +49,28 @@ MAX_UNLEARN_PCT = 0.05   # cap unlearning at 5% of training set per attribute
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-# Adult dataset schema (used when the CSV ships without a header row)
-ADULT_COLS = [
-    "age", "workclass", "fnlwgt", "education", "education-num",
-    "marital-status", "occupation", "relationship", "race", "sex",
-    "capital-gain", "capital-loss", "hours-per-week", "native-country", "income",
-]
+# COMPAS-specific constants
+SCALE_FILTER    = "Risk of Recidivism"   # keep one row per assessment
 # Attribute name → string value that represents the privileged group
-PROTECTED_ATTRS = {"sex": "Male", "race": "White"}
-TARGET_COL      = "income"
-POSITIVE_LABEL  = ">50K"
+PROTECTED_ATTRS = {"Sex_Code_Text": "Male", "Ethnic_Code_Text": "Caucasian"}
+TARGET_COL      = "ScoreText"
+POSITIVE_LABEL  = "High"
+
+# Columns to drop before feature encoding:
+#   - identifiers and names
+#   - raw date strings (age is derived from them)
+#   - COMPAS score outputs (circular with the target)
+#   - scale metadata used only for row selection
+DROP_COLS = [
+    "Person_ID", "AssessmentID", "Case_ID",
+    "LastName", "FirstName", "MiddleName",
+    "DateOfBirth", "Screening_Date",
+    "ScaleSet_ID", "ScaleSet", "Scale_ID", "DisplayText",
+    "RawScore", "DecileScore",
+    "RecSupervisionLevel", "RecSupervisionLevelText",
+    "AssessmentReason",
+    "IsCompleted", "IsDeleted",
+]
 
 
 # ── Data loading ───────────────────────────────────────────────────────────────
@@ -64,18 +79,26 @@ def load_and_preprocess(path: str):
     Returns
     -------
     X          : (n, d) float array, scaled
-    y          : (n,) int array — 1 means income >50K
+    y          : (n,) int array — 1 means ScoreText == "High"
     protected  : (n, p) int array — 1 = privileged group, 0 = unprivileged
     attr_names : list[str] — names of protected attributes found in the dataset
     """
-    raw = pd.read_csv(path, nrows=1, header=None)
-    has_header = not str(raw.iloc[0, 0]).strip().lstrip("-").replace(".", "").isdigit()
-    df = pd.read_csv(path) if has_header else pd.read_csv(path, header=None, names=ADULT_COLS)
+    df = pd.read_csv(path)
 
-    for col in df.select_dtypes(include="object").columns:
-        df[col] = df[col].str.strip()
-    df.replace("?", np.nan, inplace=True)
-    df.dropna(inplace=True)
+    # One row per person per assessment: keep completed recidivism-risk rows only
+    df = df[(df["IsCompleted"] == 1) & (df["IsDeleted"] == 0)]
+    df = df[df["DisplayText"] == SCALE_FILTER].copy()
+    df.reset_index(drop=True, inplace=True)
+
+    # Derive age at screening from the two date columns
+    dob            = pd.to_datetime(df["DateOfBirth"],   errors="coerce")
+    screen         = pd.to_datetime(df["Screening_Date"], errors="coerce")
+    df["age"]      = ((screen - dob).dt.days / 365.25).round(1)
+
+    df = df.drop(columns=[c for c in DROP_COLS if c in df.columns])
+
+    required = ["age", TARGET_COL] + [a for a in PROTECTED_ATTRS if a in df.columns]
+    df.dropna(subset=required, inplace=True)
     df.reset_index(drop=True, inplace=True)
 
     # Extract protected attributes as binary BEFORE any encoding so group
@@ -86,11 +109,11 @@ def load_and_preprocess(path: str):
         for attr in attr_names
     ]) if attr_names else np.empty((len(df), 0), dtype=int)
 
-    y = (df[TARGET_COL].str.rstrip(".") == POSITIVE_LABEL).astype(int).values
+    y = (df[TARGET_COL] == POSITIVE_LABEL).astype(int).values
 
     feat_df = df.drop(columns=[TARGET_COL])
     for col in feat_df.select_dtypes(include="object").columns:
-        feat_df[col] = LabelEncoder().fit_transform(feat_df[col])
+        feat_df[col] = LabelEncoder().fit_transform(feat_df[col].astype(str))
     X = StandardScaler().fit_transform(feat_df.values.astype(float))
 
     return X, y, protected, attr_names
@@ -436,7 +459,7 @@ def print_report(report: dict) -> None:
     print(f"\nDataset : {ds['path']}  "
           f"({ds['n_samples']} samples, {ds['n_features']} features)")
     print(f"Split   : {ds['n_train']} train / {ds['n_test']} test")
-    print(f"\nBaseline accuracy : {bl['accuracy']:.4f}")
+    print(f"\nBaseline accuracy : {bl['accuracy']:.4f}  (predicting ScoreText='{POSITIVE_LABEL}')")
 
     for attr, m in bl["metrics"].items():
         print(f"\n  [{attr.upper()}]")
@@ -478,6 +501,7 @@ if __name__ == "__main__":
     # 1. Load
     print(f"Loading: {DATASET_PATH}")
     X, y, protected, attr_names = load_and_preprocess(DATASET_PATH)
+    print(f"Scale   : {SCALE_FILTER}")
     print(f"Dataset : {X.shape[0]} samples, {X.shape[1]} features  "
           f"|  Protected attributes: {attr_names}")
 
