@@ -30,6 +30,8 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _BIAS_REPORT_PATH = _PROJECT_ROOT / "bias_report.json"
 _RETUNE_PATH      = _PROJECT_ROOT / "retune.json"
 _FIX_MESSAGE_PATH = _PROJECT_ROOT / "fix_message.md"
+_ACCEPTED_JSON    = _PROJECT_ROOT / "glassbox_accepted.json"
+_ACCEPTED_PY      = _PROJECT_ROOT / "glassbox_accepted.py"
 
 
 class GlassboxAPI:
@@ -44,6 +46,7 @@ class GlassboxAPI:
         self._window = None
         self._fixtures = self._load_fixtures()
         self._session = session
+        self._head_cache: dict[str, dict] = {}
 
     def bind_window(self, window: Any) -> None:
         self._window = window
@@ -93,8 +96,14 @@ class GlassboxAPI:
         """
         report = self._read_bias_report()
         if report is not None:
-            base = adapter.baseline_analysis(report)
-            return adapter.splice_analysis(report, base, head_id, splice)
+            if head_id in self._head_cache:
+                base = self._head_cache[head_id]
+            else:
+                base = adapter.baseline_analysis(report)
+                self._head_cache.setdefault("baseline", base)
+            result = adapter.splice_analysis(report, base, head_id, splice)
+            self._head_cache[result["id"]] = result
+            return result
         fixture_id = _fixture_id(head_id, splice)
         if fixture_id in self._fixtures:
             return self._fixtures[fixture_id]
@@ -187,17 +196,68 @@ class GlassboxAPI:
             return []
         return self._session.get_history(event_types=event_types, limit=limit)
 
-    def accept_splice(self, splice_id: str, summary: str = "", file_paths: list[str] | None = None) -> bool:
-        if self._session is None:
-            return False
-        self._session.log_event(
-            "diff_accepted",
-            {
-                "diff_id": splice_id,
-                "summary": summary,
-                "file_paths": file_paths or [],
-            },
-        )
+    def accept_splice(self, splice_id: str, summary: str = "", file_paths: list[str] | None = None) -> dict:
+        """Persist the accepted splice to disk. Returns {written, accepted_count, py_path}.
+
+        Two artifacts at the project root:
+          * glassbox_accepted.json — structured list of accepted splices
+          * glassbox_accepted.py   — importable module exposing transform(X, y)
+        """
+        catalog = {s["id"]: s for s in self.list_splices()}
+        splice = catalog.get(splice_id)
+        if splice is None:
+            return {"written": False, "reason": f"unknown splice {splice_id}"}
+
+        accepted = self._read_accepted()
+        from datetime import datetime, timezone
+        accepted.append({
+            "id": splice_id,
+            "kind": splice.get("kind"),
+            "label": splice.get("label"),
+            "args": splice.get("args", {}),
+            "magnitude": splice.get("magnitude"),
+            "accepted_at": datetime.now(timezone.utc).isoformat(),
+            "summary": summary,
+        })
+        _ACCEPTED_JSON.write_text(json.dumps(accepted, indent=2), encoding="utf-8")
+        _ACCEPTED_PY.write_text(_render_accepted_module(accepted), encoding="utf-8")
+
+        if self._session is not None:
+            self._session.log_event(
+                "diff_accepted",
+                {
+                    "diff_id": splice_id,
+                    "summary": summary,
+                    "file_paths": [str(_ACCEPTED_PY), str(_ACCEPTED_JSON)],
+                },
+            )
+        return {
+            "written": True,
+            "accepted_count": len(accepted),
+            "py_path": str(_ACCEPTED_PY.relative_to(_PROJECT_ROOT)),
+            "json_path": str(_ACCEPTED_JSON.relative_to(_PROJECT_ROOT)),
+        }
+
+    def accepted_splices(self) -> list[dict]:
+        """Return the current accepted-splice ledger. Empty list if none."""
+        return self._read_accepted()
+
+    def _read_accepted(self) -> list[dict]:
+        if not _ACCEPTED_JSON.exists():
+            return []
+        try:
+            with open(_ACCEPTED_JSON) as fh:
+                data = json.load(fh)
+            return data if isinstance(data, list) else []
+        except (json.JSONDecodeError, OSError):
+            return []
+
+    def reset_accepted(self) -> bool:
+        """Clear the accepted-splice ledger and reset the head cache. Used between demo runs."""
+        for p in (_ACCEPTED_JSON, _ACCEPTED_PY):
+            if p.exists():
+                p.unlink()
+        self._head_cache.clear()
         return True
 
     def reject_splice(self, splice_id: str, summary: str = "", reason: str = "") -> bool:
@@ -234,6 +294,97 @@ def _fixture_id(head_id: str, splice: dict) -> str:
     kind = splice.get("kind", "unknown")
     disambiguator = splice.get("id") or splice.get("attribute") or kind
     return f"{head_id}__{kind}_{disambiguator}"
+
+
+_PRIMITIVE_RENDERERS: dict[str, str] = {
+    "unlearn": (
+        "def _splice_{idx}(X, y, sample_weight=None):\n"
+        "    # {label}\n"
+        "    # Drop high-confidence positives where {attribute}=={priv} (max {max_pct:.0%}).\n"
+        "    mask = (X[{attribute!r}] == {priv!r}) & (y == 1)\n"
+        "    keep_n = int(len(X) - min(int(len(X) * {max_pct}), int(mask.sum())))\n"
+        "    keep_idx = X.index[~mask].tolist() + X.index[mask].tolist()[: max(0, keep_n - (~mask).sum())]\n"
+        "    keep_idx = sorted(set(keep_idx))\n"
+        "    return X.loc[keep_idx], y.loc[keep_idx], (sample_weight.loc[keep_idx] if sample_weight is not None else None)\n"
+    ),
+    "reweight": (
+        "def _splice_{idx}(X, y, sample_weight=None):\n"
+        "    # {label}\n"
+        "    # Reweight inversely proportional to group frequency on attribute={attribute!r}.\n"
+        "    counts = X[{attribute!r}].value_counts()\n"
+        "    weights = 1.0 / X[{attribute!r}].map(counts)\n"
+        "    weights = weights * (len(X) / weights.sum())\n"
+        "    if sample_weight is not None:\n"
+        "        weights = weights * sample_weight\n"
+        "    return X, y, weights\n"
+    ),
+    "smote": (
+        "def _splice_{idx}(X, y, sample_weight=None):\n"
+        "    # {label}\n"
+        "    # Oversample minority {attribute!r} groups using SMOTENC for mixed dtypes.\n"
+        "    from imblearn.over_sampling import SMOTENC\n"
+        "    cat_cols = [i for i, c in enumerate(X.columns) if X[c].dtype == 'object' or c == {attribute!r}]\n"
+        "    smote = SMOTENC(categorical_features=cat_cols, random_state=42)\n"
+        "    Xr, yr = smote.fit_resample(X, y)\n"
+        "    return Xr, yr, None\n"
+    ),
+    "threshold": (
+        "def _splice_{idx}(X, y, sample_weight=None):\n"
+        "    # {label}\n"
+        "    # Mark per-group decision threshold; applied at predict time, not training time.\n"
+        "    X = X.copy()\n"
+        "    X.attrs['glassbox_threshold'] = {{'attribute': {attribute!r}, 'target_rate': {target_rate}}}\n"
+        "    return X, y, sample_weight\n"
+    ),
+    "fairlearn": (
+        "def _splice_{idx}(X, y, sample_weight=None):\n"
+        "    # {label}\n"
+        "    # Mark fairlearn constraint; wrap the estimator with ExponentiatedGradient at fit time.\n"
+        "    X = X.copy()\n"
+        "    X.attrs['glassbox_fairlearn'] = {{'attribute': {attribute!r}, 'constraint': {constraint!r}}}\n"
+        "    return X, y, sample_weight\n"
+    ),
+}
+
+
+def _render_accepted_module(accepted: list[dict]) -> str:
+    """Emit a self-contained Python module containing transform() composing all accepted splices.
+
+    The output is importable and runnable: `from glassbox_accepted import transform`
+    then `X, y, w = transform(X, y)` before fitting.
+    """
+    header = (
+        '"""Generated by Glassbox. Apply accepted splices before training.\n\n'
+        "Composition order matches accept order. Re-running Glassbox and accepting more\n"
+        "splices appends to this file (full rewrite, deterministic from glassbox_accepted.json).\n"
+        '"""\n'
+        "from __future__ import annotations\n\n"
+    )
+    if not accepted:
+        return header + "def transform(X, y, sample_weight=None):\n    return X, y, sample_weight\n"
+
+    body_parts: list[str] = []
+    for idx, entry in enumerate(accepted):
+        kind = entry.get("kind") or "unlearn"
+        args = entry.get("args", {}) or {}
+        template = _PRIMITIVE_RENDERERS.get(kind, _PRIMITIVE_RENDERERS["reweight"])
+        ctx = {
+            "idx":         idx,
+            "label":       entry.get("label", entry.get("id", "")),
+            "attribute":   args.get("attribute", "sex"),
+            "max_pct":     args.get("max_pct", 0.05),
+            "priv":        args.get("priv", "Male"),
+            "target_rate": args.get("target_rate", 0.30),
+            "constraint":  args.get("constraint", "DemographicParity"),
+        }
+        body_parts.append(template.format(**ctx))
+
+    composer = ["def transform(X, y, sample_weight=None):"]
+    composer.append('    """Apply each accepted splice in order. Returns (X, y, sample_weight)."""')
+    for idx, _ in enumerate(accepted):
+        composer.append(f"    X, y, sample_weight = _splice_{idx}(X, y, sample_weight)")
+    composer.append("    return X, y, sample_weight\n")
+    return header + "\n".join(body_parts) + "\n\n" + "\n".join(composer)
 
 
 def _empty_analysis() -> dict:

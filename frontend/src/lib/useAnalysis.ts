@@ -36,7 +36,12 @@ export function useAnalysis() {
     const splice = state.pending.splice
     const caption = await pywebview.captionFor(splice.id, 'committed')
     dispatch({ kind: 'accept', caption })
-    pywebview.acceptSplice(splice.id, splice.label).then(() => bumpHistory())
+    pywebview.acceptSplice(splice.id, splice.label).then((result) => {
+      bumpHistory()
+      if (result.written) {
+        window.dispatchEvent(new CustomEvent('glassbox:accepted-changed', { detail: result }))
+      }
+    })
   }, [state, dispatch, bumpHistory])
 
   const reject = useCallback(() => {

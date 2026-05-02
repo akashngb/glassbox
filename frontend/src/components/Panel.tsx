@@ -4,22 +4,23 @@ import { cn } from '@/lib/cn'
 import { tokens } from '@/lib/tokens'
 import type { PanelId } from '@/types/analysis'
 import { useAnalysis } from '@/lib/useAnalysis'
+import { BorderRotate } from '@/components/ui/border-rotate'
+import { palettes, paletteForPanel, type PaletteName } from '@/lib/palettes'
 
 export interface PanelProps {
   id: PanelId
   title: string
   unit?: string
   children: ReactNode
-  metric: ReactNode      // the big number / readout
-  subline?: ReactNode    // small contextual text under metric
+  metric: ReactNode
+  subline?: ReactNode
 }
 
 export function Panel({ id, title, unit, children, metric, subline }: PanelProps) {
-  const { selection, hovered, pending, timeline, select, hover } = useAnalysis()
+  const { head, selection, hovered, pending, timeline, select, hover } = useAnalysis()
   const [committed, setCommitted] = useState(false)
   const prevLenRef = useRef(timeline.length)
 
-  // Brief committed pulse after every accept.
   useEffect(() => {
     if (timeline.length > prevLenRef.current) {
       setCommitted(true)
@@ -32,10 +33,14 @@ export function Panel({ id, title, unit, children, metric, subline }: PanelProps
 
   const state = committed ? 'committed' : pending ? 'pending' : selection === id ? 'selected' : 'idle'
 
+  let paletteName: PaletteName = paletteForPanel(id)
+  if (id === 'flags' && head.panels.flags.length > 0) {
+    paletteName = 'violet'
+  }
+  const palette = palettes[paletteName]
+
   return (
     <motion.div
-      data-state={state}
-      className={cn('gb-glass gb-panel cursor-pointer flex flex-col gap-3')}
       onMouseEnter={() => hover(id)}
       onMouseLeave={() => hover(null)}
       onClick={() => select(selection === id ? null : id)}
@@ -43,27 +48,43 @@ export function Panel({ id, title, unit, children, metric, subline }: PanelProps
         scale: hovered === id ? 1.005 : 1,
       }}
       transition={tokens.springChrome}
+      className="h-full cursor-pointer"
     >
-      <header className="flex items-baseline justify-between">
-        <div className="text-[12px] font-bold tracking-wide text-[var(--color-fg)] uppercase">
-          {title}
-        </div>
-        {unit && <div className="gb-unit-label">{unit}</div>}
-      </header>
+      <BorderRotate
+        gradientColors={palette}
+        backgroundColor="#0a0a0b"
+        borderRadius={12}
+        borderWidth={1}
+        animationSpeed={7}
+        className="h-full"
+      >
+        <div data-state={state} className={cn('gb-panel flex flex-col gap-3')}>
+          <header className="flex items-baseline justify-between">
+            <div className="text-[12px] font-medium tracking-wide text-[var(--color-fg)] uppercase">
+              {title}
+            </div>
+            {unit && <div className="gb-unit-label">{unit}</div>}
+          </header>
 
-      <div className="flex items-baseline gap-2">
-        <div
-          className="gb-num font-semibold leading-none"
-          style={{ fontSize: 'var(--gb-text-headline)' }}
-        >
-          {metric}
-        </div>
-        {subline && <div className="text-[11px] text-[var(--color-fg-muted)]">{subline}</div>}
-      </div>
+          <div className="flex items-baseline gap-2">
+            <div
+              className="gb-display leading-none text-[var(--color-fg)]"
+              style={{ fontSize: 'var(--gb-text-headline)' }}
+            >
+              {metric}
+            </div>
+            {subline && (
+              <div className="font-mono text-[11px] text-[var(--color-fg-muted)]">
+                {subline}
+              </div>
+            )}
+          </div>
 
-      <div className="mt-auto">
-        {children}
-      </div>
+          <div className="mt-auto">
+            {children}
+          </div>
+        </div>
+      </BorderRotate>
     </motion.div>
   )
 }

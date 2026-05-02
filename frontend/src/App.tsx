@@ -11,11 +11,13 @@ import { SceneRoot } from '@/components/SceneRoot'
 import { FieldStateGate } from '@/components/FieldStateGate'
 import { SessionHistory } from '@/components/SessionHistory'
 import { useSession } from '@/state/session'
+import { DemoDriver } from '@/lib/demoDriver'
 
 export function App() {
   return (
     <SceneRoot>
       <FieldStateGate />
+      <BackgroundStreak />
       <div
         className="grid h-screen w-screen text-[var(--color-fg)] relative"
         style={{
@@ -28,10 +30,6 @@ export function App() {
           `,
         }}
       >
-        {/* Bento backdrop: cool + warm radial blooms so glass has something
-            nontrivial to refract. Sits below everything else. */}
-        <div className="gb-canvas-backdrop" aria-hidden="true" />
-
         <div style={{ gridArea: 'cmd' }} className="gb-cmd-host">
           <CommandBar />
         </div>
@@ -39,11 +37,8 @@ export function App() {
           <SpliceTray />
         </div>
         <div style={{ gridArea: 'canvas' }} className="relative overflow-hidden">
-          {/* Backdrop: live adversarial-prober particles, Backboard-orchestrated when wired. */}
           <ProbeField />
-          {/* Gesture overlay: drag-to-splice rectangle, sits between particles and panels. */}
           <SpliceGesture />
-          {/* Foreground: dashboard panels, above the field via gb-bento-canvas z-index. */}
           <BentoCanvas />
         </div>
         <div style={{ gridArea: 'inspector' }} className="gb-inspector-host overflow-y-auto no-scrollbar">
@@ -56,7 +51,23 @@ export function App() {
 
       <SessionHistory />
       <ResumeToast />
+      <DemoDriver />
     </SceneRoot>
+  )
+}
+
+function BackgroundStreak() {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-[24%] h-px bg-gradient-to-r from-transparent via-white/30 to-transparent z-0"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-[8%] h-56 bg-gradient-to-t from-transparent via-white/[0.05] to-transparent blur-3xl z-0"
+      />
+    </>
   )
 }
 
@@ -105,7 +116,7 @@ function ResumeToast() {
             className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]"
             aria-label="Dismiss"
           >
-            ✕
+            ×
           </button>
         </motion.div>
       )}

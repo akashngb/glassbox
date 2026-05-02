@@ -27,3 +27,7 @@ adult.data
 adult.test
 compas-scores-raw.csv
 retune.json
+
+# Glassbox-generated splice ledger (runtime output, not source)
+glassbox_accepted.json
+glassbox_accepted.py

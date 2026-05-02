@@ -56,12 +56,32 @@ declare global {
         model_identity: () => Promise<ModelIdentity>
         session_info: () => Promise<SessionInfo>
         session_history: (event_types?: string[] | null, limit?: number) => Promise<SessionEvent[]>
-        accept_splice: (splice_id: string, summary: string, file_paths: string[]) => Promise<boolean>
+        accept_splice: (splice_id: string, summary: string, file_paths: string[]) => Promise<AcceptResult>
         reject_splice: (splice_id: string, summary: string, reason: string) => Promise<boolean>
         change_param: (node_id: string, param_name: string, old_value: unknown, new_value: unknown) => Promise<boolean>
+        accepted_splices: () => Promise<AcceptedSpliceEntry[]>
+        reset_accepted: () => Promise<boolean>
       }
     }
   }
+}
+
+export interface AcceptResult {
+  written: boolean
+  accepted_count?: number
+  py_path?: string
+  json_path?: string
+  reason?: string
+}
+
+export interface AcceptedSpliceEntry {
+  id: string
+  kind: string
+  label: string
+  args: Record<string, unknown>
+  magnitude: number
+  accepted_at: string
+  summary: string
 }
 
 export interface SessionEvent {
@@ -170,9 +190,9 @@ export const pywebview = {
     return []
   },
 
-  async acceptSplice(spliceId: string, summary = '', filePaths: string[] = []): Promise<boolean> {
+  async acceptSplice(spliceId: string, summary = '', filePaths: string[] = []): Promise<AcceptResult> {
     if (await pywebviewReady()) return window.pywebview!.api.accept_splice(spliceId, summary, filePaths)
-    return false
+    return { written: false, reason: 'no-bridge' }
   },
 
   async rejectSplice(spliceId: string, summary = '', reason = ''): Promise<boolean> {
@@ -182,6 +202,16 @@ export const pywebview = {
 
   async changeParam(nodeId: string, paramName: string, oldValue: unknown, newValue: unknown): Promise<boolean> {
     if (await pywebviewReady()) return window.pywebview!.api.change_param(nodeId, paramName, oldValue, newValue)
+    return false
+  },
+
+  async acceptedSplices(): Promise<AcceptedSpliceEntry[]> {
+    if (await pywebviewReady()) return window.pywebview!.api.accepted_splices()
+    return []
+  },
+
+  async resetAccepted(): Promise<boolean> {
+    if (await pywebviewReady()) return window.pywebview!.api.reset_accepted()
     return false
   },
 }
