@@ -1,0 +1,24 @@
+{
+  "id": "unlearn-white",
+  "caption": "After unlearning 892 high-confidence white positives, the race-axis prediction gap drops from 14.2pp to 3.6pp.",
+  "panels": {
+    "dpd":      { "value": 0.036, "history": [{ "step": 0, "value": 0.142 }, { "step": 1, "value": 0.036 }] },
+    "dir":      { "value": 0.844, "history": [{ "step": 0, "value": 0.512 }, { "step": 1, "value": 0.844 }] },
+    "eod":      { "value": 0.028, "history": [{ "step": 0, "value": 0.054 }, { "step": 1, "value": 0.028 }] },
+    "accuracy": { "privileged": 0.834, "unprivileged": 0.839, "history": [{ "step": 0, "value": 0.847 }, { "step": 1, "value": 0.836 }] },
+    "flags": [
+      { "attribute": "sex", "metric": "disparate_impact_ratio",  "severity": "HIGH",
+        "value": 0.355, "threshold": 0.8,
+        "message": "'sex': disparate impact 0.355 < 0.8 (80% rule)" },
+      { "attribute": "sex", "metric": "demographic_parity_diff", "severity": "HIGH",
+        "value": 0.198, "threshold": 0.10,
+        "message": "'sex': demographic parity gap 0.198 > 0.10" }
+    ]
+  },
+  "splice_meta": {
+    "applied": "unlearn-white-high-conf",
+    "shards_retrained": 3,
+    "samples_removed": 892,
+    "wall_clock_ms": 2640
+  }
+}

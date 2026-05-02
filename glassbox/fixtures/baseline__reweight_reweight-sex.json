@@ -1,0 +1,21 @@
+{
+  "id": "reweight-sex",
+  "caption": "Rebalancing sample weights closes the disparate impact gap from 0.36 to 0.91.",
+  "panels": {
+    "dpd":      { "value": 0.027, "history": [{ "step": 0, "value": 0.198 }, { "step": 1, "value": 0.027 }] },
+    "dir":      { "value": 0.910, "history": [{ "step": 0, "value": 0.355 }, { "step": 1, "value": 0.910 }] },
+    "eod":      { "value": 0.018, "history": [{ "step": 0, "value": 0.071 }, { "step": 1, "value": 0.018 }] },
+    "accuracy": { "privileged": 0.829, "unprivileged": 0.835, "history": [{ "step": 0, "value": 0.847 }, { "step": 1, "value": 0.832 }] },
+    "flags": [
+      { "attribute": "race", "metric": "disparate_impact_ratio",  "severity": "MEDIUM",
+        "value": 0.512, "threshold": 0.8,
+        "message": "'race': disparate impact 0.512 < 0.8 (80% rule)" }
+    ]
+  },
+  "splice_meta": {
+    "applied": "reweight-sex",
+    "shards_retrained": 5,
+    "samples_removed": 0,
+    "wall_clock_ms": 4480
+  }
+}

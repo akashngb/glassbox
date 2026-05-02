@@ -1,0 +1,42 @@
+{
+  "unlearn-male-high-conf": {
+    "accept":    "If you accept this unlearn, the model stops over-predicting >$50K for men by removing 1,247 of its most overconfident male-positive training samples.",
+    "reject":    "If you reject this, the model continues to predict >$50K for men 19.8 percentage points more often than for women.",
+    "committed": "Unlearned 1,247 high-confidence male positives. The income-prediction gap fell from 19.8pp to 4.1pp."
+  },
+  "reweight-sex": {
+    "accept":    "If you accept this reweighting, every female-positive training sample gets 2.4x the loss weight, lifting the disparate impact ratio from 0.36 to 0.91.",
+    "reject":    "If you reject this, the model keeps treating women as 64% less likely to deserve a positive prediction.",
+    "committed": "Rebalanced sample weights by sex. Disparate impact ratio rose from 0.36 to 0.91."
+  },
+  "smote-sex": {
+    "accept":    "If you accept SMOTE, the training set gains 4,200 synthetic female-positive samples and the model matches its prediction rates within 2 percentage points.",
+    "reject":    "If you reject this, the model continues to predict >$50K for 31% of men and 11% of women.",
+    "committed": "Added 4,200 synthetic female-positive samples via SMOTE. Prediction rates now within 2pp."
+  },
+  "threshold-sex": {
+    "accept":    "If you accept group-specific thresholds, the model uses 0.62 for men and 0.41 for women, equalizing positive prediction rates without retraining.",
+    "reject":    "If you reject this, every group sees the same 0.50 cutoff and the disparate impact stays below the 80% rule.",
+    "committed": "Set per-group thresholds (0.62 men, 0.41 women). Positive rates now within 1pp."
+  },
+  "fairlearn-sex-dp": {
+    "accept":    "If you accept this constraint, training enforces demographic parity directly. The model gives up 2pp of accuracy in exchange for near-zero gap.",
+    "reject":    "If you reject this, the model keeps optimizing accuracy alone and the disparate impact ratio stays at 0.36.",
+    "committed": "Trained with DemographicParity constraint. Demographic parity gap is now 0.5pp."
+  },
+  "unlearn-white-high-conf": {
+    "accept":    "If you accept this unlearn, the model stops over-predicting >$50K for white workers by removing 892 of its most overconfident white-positive training samples.",
+    "reject":    "If you reject this, the model continues to predict >$50K for white workers 14.2 percentage points more often than for non-white workers.",
+    "committed": "Unlearned 892 high-confidence white positives. The race-axis gap fell from 14.2pp to 3.6pp."
+  },
+  "reweight-race": {
+    "accept":    "If you accept this reweighting, every non-white-positive training sample gets 1.9x the loss weight, lifting the disparate impact ratio from 0.51 to 0.88.",
+    "reject":    "If you reject this, the model keeps treating non-white workers as 49% less likely to deserve a positive prediction.",
+    "committed": "Rebalanced sample weights by race. Disparate impact ratio rose from 0.51 to 0.88."
+  },
+  "smote-race": {
+    "accept":    "If you accept SMOTE, the training set gains 3,100 synthetic non-white-positive samples and the model brings race-axis bias within the 80% rule.",
+    "reject":    "If you reject this, the model continues to predict >$50K for white workers 14pp more often than for non-white workers.",
+    "committed": "Added 3,100 synthetic non-white-positive samples via SMOTE. Race-axis bias now within 80% rule."
+  }
+}

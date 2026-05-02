@@ -1,0 +1,30 @@
+{
+  "id": "baseline",
+  "caption": "The model predicts >$50K income for 31% of men but only 11% of women, even when other features are held equal.",
+  "panels": {
+    "dpd":      { "value": 0.198, "history": [{ "step": 0, "value": 0.198 }] },
+    "dir":      { "value": 0.355, "history": [{ "step": 0, "value": 0.355 }] },
+    "eod":      { "value": 0.071, "history": [{ "step": 0, "value": 0.071 }] },
+    "accuracy": { "privileged": 0.847, "unprivileged": 0.918, "history": [{ "step": 0, "value": 0.847 }] },
+    "flags": [
+      { "attribute": "sex",  "metric": "disparate_impact_ratio",  "severity": "HIGH",
+        "value": 0.355, "threshold": 0.8,
+        "message": "'sex': disparate impact 0.355 < 0.8 (80% rule)" },
+      { "attribute": "sex",  "metric": "demographic_parity_diff", "severity": "HIGH",
+        "value": 0.198, "threshold": 0.10,
+        "message": "'sex': demographic parity gap 0.198 > 0.10" },
+      { "attribute": "race", "metric": "disparate_impact_ratio",  "severity": "MEDIUM",
+        "value": 0.512, "threshold": 0.8,
+        "message": "'race': disparate impact 0.512 < 0.8 (80% rule)" },
+      { "attribute": "race", "metric": "demographic_parity_diff", "severity": "MEDIUM",
+        "value": 0.142, "threshold": 0.10,
+        "message": "'race': demographic parity gap 0.142 > 0.10" }
+    ]
+  },
+  "splice_meta": {
+    "applied": null,
+    "shards_retrained": 0,
+    "samples_removed": 0,
+    "wall_clock_ms": 0
+  }
+}

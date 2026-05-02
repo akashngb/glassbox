@@ -1,0 +1,21 @@
+{
+  "id": "reweight-race",
+  "caption": "Rebalancing by race closes the disparate impact ratio to 0.88.",
+  "panels": {
+    "dpd":      { "value": 0.024, "history": [{ "step": 0, "value": 0.142 }, { "step": 1, "value": 0.024 }] },
+    "dir":      { "value": 0.880, "history": [{ "step": 0, "value": 0.512 }, { "step": 1, "value": 0.880 }] },
+    "eod":      { "value": 0.019, "history": [{ "step": 0, "value": 0.054 }, { "step": 1, "value": 0.019 }] },
+    "accuracy": { "privileged": 0.831, "unprivileged": 0.837, "history": [{ "step": 0, "value": 0.847 }, { "step": 1, "value": 0.834 }] },
+    "flags": [
+      { "attribute": "sex", "metric": "disparate_impact_ratio",  "severity": "HIGH",
+        "value": 0.355, "threshold": 0.8,
+        "message": "'sex': disparate impact 0.355 < 0.8 (80% rule)" }
+    ]
+  },
+  "splice_meta": {
+    "applied": "reweight-race",
+    "shards_retrained": 5,
+    "samples_removed": 0,
+    "wall_clock_ms": 4380
+  }
+}

@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glassbox"
+version = "0.1.0"
+description = "A native window that visualizes machine unlearning. Bias hides in waveforms; splice the dataset, accept the consequence."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "HuskyHack 2026 team" }
+]
+dependencies = [
+    "pywebview>=5.3",
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scikit-learn>=1.4",
+    "imbalanced-learn>=0.12",
+]
+
+[project.optional-dependencies]
+gemini = ["google-generativeai>=0.7"]
+fairlearn = ["fairlearn>=0.10"]
+
+[project.scripts]
+glassbox = "glassbox.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["glassbox*"]
+
+[tool.setuptools.package-data]
+glassbox = ["frontend/**/*", "fixtures/*.json"]

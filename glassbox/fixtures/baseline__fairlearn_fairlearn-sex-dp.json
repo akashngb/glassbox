@@ -1,0 +1,22 @@
+{
+  "id": "fairlearn-sex",
+  "caption": "Fairlearn DemographicParity reduction enforces equal positive rates as a hard training constraint.",
+  "panels": {
+    "dpd":      { "value": 0.005, "history": [{ "step": 0, "value": 0.198 }, { "step": 1, "value": 0.005 }] },
+    "dir":      { "value": 0.983, "history": [{ "step": 0, "value": 0.355 }, { "step": 1, "value": 0.983 }] },
+    "eod":      { "value": 0.022, "history": [{ "step": 0, "value": 0.071 }, { "step": 1, "value": 0.022 }] },
+    "accuracy": { "privileged": 0.823, "unprivileged": 0.829, "history": [{ "step": 0, "value": 0.847 }, { "step": 1, "value": 0.826 }] },
+    "flags": [
+      { "attribute": "race", "metric": "disparate_impact_ratio",  "severity": "MEDIUM",
+        "value": 0.512, "threshold": 0.8,
+        "message": "'race': disparate impact 0.512 < 0.8 (80% rule)" }
+    ]
+  },
+  "splice_meta": {
+    "applied": "fairlearn-sex-dp",
+    "constraint": "DemographicParity",
+    "shards_retrained": 5,
+    "samples_removed": 0,
+    "wall_clock_ms": 8920
+  }
+}

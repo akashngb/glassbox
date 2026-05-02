@@ -1,0 +1,22 @@
+{
+  "id": "smote-sex",
+  "caption": "SMOTE adds 4,200 synthetic female-positive samples; the model now matches its prediction rates within 2 percentage points.",
+  "panels": {
+    "dpd":      { "value": 0.019, "history": [{ "step": 0, "value": 0.198 }, { "step": 1, "value": 0.019 }] },
+    "dir":      { "value": 0.943, "history": [{ "step": 0, "value": 0.355 }, { "step": 1, "value": 0.943 }] },
+    "eod":      { "value": 0.012, "history": [{ "step": 0, "value": 0.071 }, { "step": 1, "value": 0.012 }] },
+    "accuracy": { "privileged": 0.821, "unprivileged": 0.828, "history": [{ "step": 0, "value": 0.847 }, { "step": 1, "value": 0.824 }] },
+    "flags": [
+      { "attribute": "race", "metric": "disparate_impact_ratio",  "severity": "MEDIUM",
+        "value": 0.512, "threshold": 0.8,
+        "message": "'race': disparate impact 0.512 < 0.8 (80% rule)" }
+    ]
+  },
+  "splice_meta": {
+    "applied": "smote-sex",
+    "shards_retrained": 5,
+    "samples_added": 4200,
+    "samples_removed": 0,
+    "wall_clock_ms": 5240
+  }
+}

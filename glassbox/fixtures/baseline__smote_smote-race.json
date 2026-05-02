@@ -1,0 +1,22 @@
+{
+  "id": "smote-race",
+  "caption": "SMOTE adds synthetic minority-race positives; race-axis bias falls within the 80% rule.",
+  "panels": {
+    "dpd":      { "value": 0.018, "history": [{ "step": 0, "value": 0.142 }, { "step": 1, "value": 0.018 }] },
+    "dir":      { "value": 0.921, "history": [{ "step": 0, "value": 0.512 }, { "step": 1, "value": 0.921 }] },
+    "eod":      { "value": 0.014, "history": [{ "step": 0, "value": 0.054 }, { "step": 1, "value": 0.014 }] },
+    "accuracy": { "privileged": 0.825, "unprivileged": 0.831, "history": [{ "step": 0, "value": 0.847 }, { "step": 1, "value": 0.828 }] },
+    "flags": [
+      { "attribute": "sex", "metric": "disparate_impact_ratio",  "severity": "HIGH",
+        "value": 0.355, "threshold": 0.8,
+        "message": "'sex': disparate impact 0.355 < 0.8 (80% rule)" }
+    ]
+  },
+  "splice_meta": {
+    "applied": "smote-race",
+    "shards_retrained": 5,
+    "samples_added": 3100,
+    "samples_removed": 0,
+    "wall_clock_ms": 4960
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "threshold-sex",
+  "caption": "Group-specific thresholds equalize positive prediction rates without retraining. Accuracy drops 3pp.",
+  "panels": {
+    "dpd":      { "value": 0.008, "history": [{ "step": 0, "value": 0.198 }, { "step": 1, "value": 0.008 }] },
+    "dir":      { "value": 0.976, "history": [{ "step": 0, "value": 0.355 }, { "step": 1, "value": 0.976 }] },
+    "eod":      { "value": 0.041, "history": [{ "step": 0, "value": 0.071 }, { "step": 1, "value": 0.041 }] },
+    "accuracy": { "privileged": 0.812, "unprivileged": 0.819, "history": [{ "step": 0, "value": 0.847 }, { "step": 1, "value": 0.815 }] },
+    "flags": [
+      { "attribute": "race", "metric": "disparate_impact_ratio",  "severity": "MEDIUM",
+        "value": 0.512, "threshold": 0.8,
+        "message": "'race': disparate impact 0.512 < 0.8 (80% rule)" }
+    ]
+  },
+  "splice_meta": {
+    "applied": "threshold-sex",
+    "shards_retrained": 0,
+    "samples_removed": 0,
+    "thresholds": { "privileged": 0.62, "unprivileged": 0.41 },
+    "wall_clock_ms": 90
+  }
+}

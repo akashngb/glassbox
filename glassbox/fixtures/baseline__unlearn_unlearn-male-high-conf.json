@@ -1,0 +1,21 @@
+{
+  "id": "unlearn-male",
+  "caption": "After unlearning 1,247 high-confidence male positives, the income-prediction gap drops from 19.8pp to 4.1pp.",
+  "panels": {
+    "dpd":      { "value": 0.041, "history": [{ "step": 0, "value": 0.198 }, { "step": 1, "value": 0.041 }] },
+    "dir":      { "value": 0.812, "history": [{ "step": 0, "value": 0.355 }, { "step": 1, "value": 0.812 }] },
+    "eod":      { "value": 0.029, "history": [{ "step": 0, "value": 0.071 }, { "step": 1, "value": 0.029 }] },
+    "accuracy": { "privileged": 0.831, "unprivileged": 0.840, "history": [{ "step": 0, "value": 0.847 }, { "step": 1, "value": 0.835 }] },
+    "flags": [
+      { "attribute": "race", "metric": "disparate_impact_ratio",  "severity": "MEDIUM",
+        "value": 0.512, "threshold": 0.8,
+        "message": "'race': disparate impact 0.512 < 0.8 (80% rule)" }
+    ]
+  },
+  "splice_meta": {
+    "applied": "unlearn-male-high-conf",
+    "shards_retrained": 4,
+    "samples_removed": 1247,
+    "wall_clock_ms": 3120
+  }
+}
