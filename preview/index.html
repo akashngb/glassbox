@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Glassbox · Why this matters preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1014;
+    --surface:   #16191f;
+    --elevated:  #1c2029;
+    --border:    #262b35;
+    --fg:        #e8eaee;
+    --fg-muted:  #9aa0ab;
+    --fg-subtle: #6b7280;
+    --accent:    #ffb86b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 56px 64px 96px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+  .breadcrumb {
+    color: var(--fg-subtle);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    color: var(--fg-muted);
+    margin: 0 0 32px;
+    font-size: 15px;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 0;
+  }
+  .toolbar .tab {
+    font-size: 13px;
+    color: var(--fg);
+    background: var(--elevated);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .toolbar .tab.active {
+    background: var(--surface);
+    border-color: var(--fg-subtle);
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .pill {
+    color: var(--fg);
+    background: var(--accent);
+    color: #1a1208;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  table.grid {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18px;
+  }
+  .colhead {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-size: 12px;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+  }
+  .colhead .c { display: inline-flex; align-items: center; gap: 6px; }
+  .colhead .c::before {
+    content: "";
+    width: 8px; height: 8px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    opacity: 0.55;
+  }
+
+  .rec {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 14px 22px;
+  }
+  .rec:hover { background: #14171d; }
+  .rec-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 18px;
+    align-items: start;
+  }
+  .rec-title {
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--fg);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .why {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .why-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .summary {
+    margin: 0 0 14px;
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .why-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .why-block-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-muted);
+    margin-bottom: 8px;
+  }
+  .articles {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .article-title {
+    color: var(--fg);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 1px solid transparent;
+  }
+  .article-title:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .article-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-top: 3px;
+  }
+  .article-source {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--fg-subtle);
+    font-size: 11px;
+  }
+  .article-rel { flex: 1; }
+  .empty { color: var(--fg-subtle); font-style: italic; font-size: 13px; }
+
+  .footer {
+    margin-top: 40px;
+    color: var(--fg-subtle);
+    font-size: 12px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+  <div class="breadcrumb">glassbox / bias-audit / preview</div>
+  <h1>Why this matters</h1>
+  <p class="subtitle">Real-world social context for proposed bias fixes — surfaced via Backboard web search.</p>
+
+  <div class="toolbar">
+    <span class="tab active">Recommendations</span>
+    <span class="tab">Metrics</span>
+    <span class="tab">Splices</span>
+    <span class="spacer"></span>
+    <span class="pill">+ New audit</span>
+  </div>
+
+  <div class="colhead">
+    <span class="c">recommendation</span>
+    <span class="c">tags</span>
+  </div>
+
+  
+    <article class="rec">
+      <header class="rec-head">
+        <div class="rec-title">Per-group decision threshold for COMPAS recidivism: lower the positive-class threshold for the Black subgroup from 0.50 to 0.42 so true-positive rate matches the white subgroup.</div>
+        <div class="chips"><span class="chip" style="color:#fca5a5;background:#ef444433;border-color:#fca5a555;">HIGH</span><span class="chip" style="color:#cbd5e1;background:#9aa0ab2a;border-color:#cbd5e155;">threshold_adjustment</span><span class="chip" style="color:#ffd9a8;background:#ffb86b33;border-color:#ffd9a855;">equal_opportunity</span><span class="chip" style="color:#cbd5e1;background:#9aa0ab2a;border-color:#cbd5e155;">attr: race</span></div>
+      </header>
+      <section class="why">
+        <div class="why-label">Why this matters</div>
+        <p class="summary">Bias in recidivism prediction tools like COMPAS can lead to unfair treatment of historically marginalized groups, where algorithms consistently rank Black defendants as higher risk compared to their White counterparts. This kind of bias results in systemic discrimination within the criminal justice system, affecting bail, sentencing, and parole decisions.</p>
+        <div class="why-grid">
+          <div class="why-block">
+            <div class="why-block-label">Precedent cases</div>
+            <div class="chips"><span class="chip" style="color:#e8eaee;background:#262b35;border-color:#e8eaee55;">COMPAS</span></div>
+          </div>
+          <div class="why-block">
+            <div class="why-block-label">Sources</div>
+            <ul class="articles">
+        <li class="article">
+          <a href="https://link.springer.com/article/10.1007/s43681-026-01116-0" target="_blank" rel="noopener" class="article-title">
+            AI and prediction of criminal justice risk: revisiting the COMPAS
+          </a>
+          <div class="article-meta">
+            <span class="article-source">Springer</span>
+            <span class="article-rel">This article reviews the accuracy and bias in algorithms used for criminal assessment, specifically focusing on COMPAS, addressing equal opportunity concerns.</span>
+          </div>
+        </li>
+        <li class="article">
+          <a href="https://www.utep.edu/creeds/_Files/docs/resources2023/utep-compas-research-poster-alezzandra-diaz.pdf" target="_blank" rel="noopener" class="article-title">
+            Machine Bias in Artificial Intelligence – COMPAS Software
+          </a>
+          <div class="article-meta">
+            <span class="article-source">University of Texas at El Paso</span>
+            <span class="article-rel">It visualizes the racial distribution of risk assessments made by COMPAS, highlighting bias discrepancies particularly affecting African-American defendants.</span>
+          </div>
+        </li>
+        <li class="article">
+          <a href="https://medium.com/@lamdaa/compas-unfair-algorithm-812702ed6a6a" target="_blank" rel="noopener" class="article-title">
+            COMPAS: Unfair Algorithm?
+          </a>
+          <div class="article-meta">
+            <span class="article-source">Medium</span>
+            <span class="article-rel">This article discusses and visualizes findings from ProPublica&#x27;s analysis of racial bias in COMPAS&#x27;s recidivism predictions.</span>
+          </div>
+        </li></ul>
+          </div>
+        </div>
+      </section>
+    </article>
+
+    <article class="rec">
+      <header class="rec-head">
+        <div class="rec-title">Reweight training samples to balance (label, sex) strata so the gradient isn&#x27;t dominated by the over-represented male-positive cohort.</div>
+        <div class="chips"><span class="chip" style="color:#fca5a5;background:#ef444433;border-color:#fca5a555;">HIGH</span><span class="chip" style="color:#cbd5e1;background:#9aa0ab2a;border-color:#cbd5e155;">reweighting</span><span class="chip" style="color:#ffd9a8;background:#ffb86b33;border-color:#ffd9a855;">disparate_impact</span><span class="chip" style="color:#cbd5e1;background:#9aa0ab2a;border-color:#cbd5e155;">attr: sex</span></div>
+      </header>
+      <section class="why">
+        <div class="why-label">Why this matters</div>
+        <p class="summary">Disparate impact based on sex in machine learning can reinforce existing gender inequalities and stereotypes, potentially affecting critical areas such as hiring and healthcare. Ensuring balanced representation in training data helps mitigate these biases and promote fair treatment across all genders.</p>
+        <div class="why-grid">
+          <div class="why-block">
+            <div class="why-block-label">Precedent cases</div>
+            <div class="chips"><span class="empty">none</span></div>
+          </div>
+          <div class="why-block">
+            <div class="why-block-label">Sources</div>
+            <ul class="articles">
+        <li class="article">
+          <a href="https://news.stanford.edu/stories/2025/10/ai-llms-age-bias-older-working-women-research" target="_blank" rel="noopener" class="article-title">
+            Researchers uncover AI bias against older working women
+          </a>
+          <div class="article-meta">
+            <span class="article-source">Stanford News</span>
+            <span class="article-rel">This article highlights how AI systems perpetuate gender and age bias, influencing workplace practices.</span>
+          </div>
+        </li>
+        <li class="article">
+          <a href="https://www.unwomen.org/en/news-stories/interview/2025/02/how-ai-reinforces-gender-bias-and-what-we-can-do-about-it" target="_blank" rel="noopener" class="article-title">
+            How AI reinforces gender bias—and what we can do about it
+          </a>
+          <div class="article-meta">
+            <span class="article-source">UN Women</span>
+            <span class="article-rel">This source discusses gender bias in AI across sectors like hiring and healthcare, relevant to sex-based disparate impact.</span>
+          </div>
+        </li>
+        <li class="article">
+          <a href="https://www.cardozolawreview.com/automating-discrimination-ai-hiring-practices-and-gender-inequality/" target="_blank" rel="noopener" class="article-title">
+            Automating Discrimination: AI Hiring Practices and Gender Inequality
+          </a>
+          <div class="article-meta">
+            <span class="article-source">Cardozo Law Review</span>
+            <span class="article-rel">Focuses on gender bias in AI hiring practices, illustrating the employment-related consequences of disparate impact.</span>
+          </div>
+        </li></ul>
+          </div>
+        </div>
+      </section>
+    </article>
+
+    <article class="rec">
+      <header class="rec-head">
+        <div class="rec-title">SMOTE-oversample the minority race subgroup before fitting the loan-default classifier so the positive-prediction-rate gap closes from 0.18 to &lt;0.05.</div>
+        <div class="chips"><span class="chip" style="color:#fcd34d;background:#f59e0b33;border-color:#fcd34d55;">MEDIUM</span><span class="chip" style="color:#cbd5e1;background:#9aa0ab2a;border-color:#cbd5e155;">resampling</span><span class="chip" style="color:#ffd9a8;background:#ffb86b33;border-color:#ffd9a855;">demographic_parity</span><span class="chip" style="color:#cbd5e1;background:#9aa0ab2a;border-color:#cbd5e155;">attr: race</span></div>
+      </header>
+      <section class="why">
+        <div class="why-label">Why this matters</div>
+        <p class="summary">Addressing the bias of demographic parity in loan-default classification helps ensure fairness by reducing unjust treatment based on race. Recent studies show how biases in loan prediction models can amplify disparities in financial opportunities, disproportionately impacting minority groups.</p>
+        <div class="why-grid">
+          <div class="why-block">
+            <div class="why-block-label">Precedent cases</div>
+            <div class="chips"><span class="chip" style="color:#e8eaee;background:#262b35;border-color:#e8eaee55;">COMPAS</span><span class="chip" style="color:#e8eaee;background:#262b35;border-color:#e8eaee55;">Amazon hiring tool</span></div>
+          </div>
+          <div class="why-block">
+            <div class="why-block-label">Sources</div>
+            <ul class="articles">
+        <li class="article">
+          <a href="https://cs229.stanford.edu/proj2021spr/report2/82007138.pdf" target="_blank" rel="noopener" class="article-title">
+            Fairness Constraints in Loan Default Prediction
+          </a>
+          <div class="article-meta">
+            <span class="article-source">Stanford University</span>
+            <span class="article-rel">This paper discusses methods for achieving demographic parity, particularly in loan default predictions.</span>
+          </div>
+        </li>
+        <li class="article">
+          <a href="https://www.mdpi.com/1911-8074/18/12/724" target="_blank" rel="noopener" class="article-title">
+            Balancing Fairness and Accuracy in Machine Learning-Based Finance
+          </a>
+          <div class="article-meta">
+            <span class="article-source">MDPI</span>
+            <span class="article-rel">Examines the balance between fairness and accuracy in financial predictions, with a focus on demographic attributes like race.</span>
+          </div>
+        </li></ul>
+          </div>
+        </div>
+      </section>
+    </article>
+
+  <div class="footer">3 scenarios · BACKBOARD_API_KEY present · cached by (bias_type, protected_attr)</div>
+</body>
+</html>

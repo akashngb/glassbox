@@ -1,0 +1,103 @@
+[
+  {
+    "scenario": {
+      "id": "compas-threshold",
+      "type": "threshold_adjustment",
+      "severity": "HIGH",
+      "bias_type": "equal_opportunity",
+      "protected_attr": "race",
+      "description": "Per-group decision threshold for COMPAS recidivism: lower the positive-class threshold for the Black subgroup from 0.50 to 0.42 so true-positive rate matches the white subgroup."
+    },
+    "context": {
+      "summary": "Bias in recidivism prediction tools like COMPAS can lead to unfair treatment of historically marginalized groups, where algorithms consistently rank Black defendants as higher risk compared to their White counterparts. This kind of bias results in systemic discrimination within the criminal justice system, affecting bail, sentencing, and parole decisions.",
+      "articles": [
+        {
+          "title": "AI and prediction of criminal justice risk: revisiting the COMPAS",
+          "url": "https://link.springer.com/article/10.1007/s43681-026-01116-0",
+          "source": "Springer",
+          "relevance": "This article reviews the accuracy and bias in algorithms used for criminal assessment, specifically focusing on COMPAS, addressing equal opportunity concerns."
+        },
+        {
+          "title": "Machine Bias in Artificial Intelligence \u2013 COMPAS Software",
+          "url": "https://www.utep.edu/creeds/_Files/docs/resources2023/utep-compas-research-poster-alezzandra-diaz.pdf",
+          "source": "University of Texas at El Paso",
+          "relevance": "It visualizes the racial distribution of risk assessments made by COMPAS, highlighting bias discrepancies particularly affecting African-American defendants."
+        },
+        {
+          "title": "COMPAS: Unfair Algorithm?",
+          "url": "https://medium.com/@lamdaa/compas-unfair-algorithm-812702ed6a6a",
+          "source": "Medium",
+          "relevance": "This article discusses and visualizes findings from ProPublica's analysis of racial bias in COMPAS's recidivism predictions."
+        }
+      ],
+      "precedent_cases": [
+        "COMPAS"
+      ]
+    }
+  },
+  {
+    "scenario": {
+      "id": "hiring-reweight",
+      "type": "reweighting",
+      "severity": "HIGH",
+      "bias_type": "disparate_impact",
+      "protected_attr": "sex",
+      "description": "Reweight training samples to balance (label, sex) strata so the gradient isn't dominated by the over-represented male-positive cohort."
+    },
+    "context": {
+      "summary": "Disparate impact based on sex in machine learning can reinforce existing gender inequalities and stereotypes, potentially affecting critical areas such as hiring and healthcare. Ensuring balanced representation in training data helps mitigate these biases and promote fair treatment across all genders.",
+      "articles": [
+        {
+          "title": "Researchers uncover AI bias against older working women",
+          "url": "https://news.stanford.edu/stories/2025/10/ai-llms-age-bias-older-working-women-research",
+          "source": "Stanford News",
+          "relevance": "This article highlights how AI systems perpetuate gender and age bias, influencing workplace practices."
+        },
+        {
+          "title": "How AI reinforces gender bias\u2014and what we can do about it",
+          "url": "https://www.unwomen.org/en/news-stories/interview/2025/02/how-ai-reinforces-gender-bias-and-what-we-can-do-about-it",
+          "source": "UN Women",
+          "relevance": "This source discusses gender bias in AI across sectors like hiring and healthcare, relevant to sex-based disparate impact."
+        },
+        {
+          "title": "Automating Discrimination: AI Hiring Practices and Gender Inequality",
+          "url": "https://www.cardozolawreview.com/automating-discrimination-ai-hiring-practices-and-gender-inequality/",
+          "source": "Cardozo Law Review",
+          "relevance": "Focuses on gender bias in AI hiring practices, illustrating the employment-related consequences of disparate impact."
+        }
+      ],
+      "precedent_cases": []
+    }
+  },
+  {
+    "scenario": {
+      "id": "lending-smote",
+      "type": "resampling",
+      "severity": "MEDIUM",
+      "bias_type": "demographic_parity",
+      "protected_attr": "race",
+      "description": "SMOTE-oversample the minority race subgroup before fitting the loan-default classifier so the positive-prediction-rate gap closes from 0.18 to <0.05."
+    },
+    "context": {
+      "summary": "Addressing the bias of demographic parity in loan-default classification helps ensure fairness by reducing unjust treatment based on race. Recent studies show how biases in loan prediction models can amplify disparities in financial opportunities, disproportionately impacting minority groups.",
+      "articles": [
+        {
+          "title": "Fairness Constraints in Loan Default Prediction",
+          "url": "https://cs229.stanford.edu/proj2021spr/report2/82007138.pdf",
+          "source": "Stanford University",
+          "relevance": "This paper discusses methods for achieving demographic parity, particularly in loan default predictions."
+        },
+        {
+          "title": "Balancing Fairness and Accuracy in Machine Learning-Based Finance",
+          "url": "https://www.mdpi.com/1911-8074/18/12/724",
+          "source": "MDPI",
+          "relevance": "Examines the balance between fairness and accuracy in financial predictions, with a focus on demographic attributes like race."
+        }
+      ],
+      "precedent_cases": [
+        "COMPAS",
+        "Amazon hiring tool"
+      ]
+    }
+  }
+]

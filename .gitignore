@@ -25,3 +25,7 @@ dist/
 adult.csv
 adult.data
 adult.test
+
+docs/
+.claude/
+.env
