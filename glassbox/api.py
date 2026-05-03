@@ -143,6 +143,65 @@ class GlassboxAPI:
         )
         return True
 
+    def apply_diff(self, file_path: str, edits: list[dict]) -> dict:
+        """Apply ordered search/replace edits to a file inside the project root.
+
+        Each edit is `{search: str, replace: str}`. We replace only the first
+        occurrence so a follow-up Reject of a separate diff doesn't accidentally
+        clobber overlapping context. Refuses to write outside the project root.
+
+        Returns `{ok: bool, error?: str, applied?: list, bytes_written?: int}`.
+        """
+        project_root = Path(__file__).resolve().parent.parent
+        try:
+            target = (project_root / file_path).resolve()
+            target.relative_to(project_root)
+        except (ValueError, OSError) as exc:
+            return {"ok": False, "error": f"refusing to write outside project root: {exc}"}
+
+        if not target.is_file():
+            return {"ok": False, "error": f"file not found: {target}"}
+
+        try:
+            src = target.read_text()
+        except OSError as exc:
+            return {"ok": False, "error": f"could not read {target}: {exc}"}
+
+        new = src
+        applied: list[dict] = []
+        for i, edit in enumerate(edits):
+            search = edit.get("search", "")
+            replace = edit.get("replace", "")
+            if not search:
+                return {"ok": False, "error": f"edit #{i + 1}: empty search string", "applied": applied}
+            if search not in new:
+                return {
+                    "ok": False,
+                    "error": (
+                        f"edit #{i + 1}: search text not found in {file_path} "
+                        "(already applied? or source drifted)"
+                    ),
+                    "applied": applied,
+                }
+            new = new.replace(search, replace, 1)
+            applied.append({"preview": search.strip()[:80]})
+
+        if new == src:
+            return {"ok": False, "error": "no changes (replacement text identical to source)"}
+
+        try:
+            target.write_text(new)
+        except OSError as exc:
+            return {"ok": False, "error": f"could not write {target}: {exc}"}
+
+        if self._session is not None:
+            self._session.log_event(
+                "diff_applied",
+                {"file": file_path, "edits": len(applied), "bytes_written": len(new)},
+            )
+
+        return {"ok": True, "applied": applied, "bytes_written": len(new)}
+
     def change_param(
         self,
         node_id: str,

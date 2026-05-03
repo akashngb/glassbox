@@ -30,6 +30,8 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
+from glassbox.bias import get_social_context
+
 # ── Config ─────────────────────────────────────────────────────────────────────
 DATASET_PATH    = "compas-scores-raw.csv"
 S               = 5       # SISA shards
@@ -44,8 +46,8 @@ DIR_THRESHOLD   = 0.80   # min acceptable disparate impact ratio (80% rule)
 EOD_THRESHOLD   = 0.10   # max acceptable equal opportunity difference
 
 # Unlearn candidate selection
-CANDIDATE_SCORE = 0.75   # min model confidence to flag a sample as a candidate
-MAX_UNLEARN_PCT = 0.05   # cap unlearning at 5% of training set per attribute
+CANDIDATE_SCORE = 0.65   # widen pool by 0.10 (DPD/DIR pull)
+MAX_UNLEARN_PCT = 0.075  # +2.5pp severity bonus per HIGH flag
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 
@@ -347,19 +349,43 @@ def find_unlearn_candidates(
 
 
 # ── Code-fix recommendations ───────────────────────────────────────────────────
+_BIAS_TYPE_BY_METRIC = {
+    "disparate_impact_ratio":  "disparate_impact",
+    "demographic_parity_diff": "demographic_parity",
+    "equal_opportunity_diff":  "equal_opportunity",
+}
+_SEVERITY_RANK = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
+
+
+def _dominant_bias_type(flags: list[dict]) -> str:
+    """Pick the bias_type from the most-severe flag, default to demographic_parity."""
+    if not flags:
+        return "demographic_parity"
+    worst = max(flags, key=lambda f: _SEVERITY_RANK.get(f.get("severity", "LOW"), 0))
+    return _BIAS_TYPE_BY_METRIC.get(worst.get("metric", ""), "demographic_parity")
+
+
 def generate_recommendations(flags: list[dict], attr_names: list[str]) -> list[dict]:
     """
     Return ranked recommendations with copy-paste code snippets.
     The VS Code extension renders these as inline suggestions.
+
+    Each rec is enriched with a `social_context` field via Backboard's web search
+    so the UI can show real-world precedent for the bias being addressed. The
+    enrichment fails soft — an empty SocialContext (no API key, network down,
+    bad response) leaves the rec usable.
     """
     flagged  = list({f["attribute"] for f in flags})
     primary  = flagged[0] if flagged else (attr_names[0] if attr_names else "sex")
     hit      = {f["metric"] for f in flags}
+    fallback_bias_type = _dominant_bias_type(flags)
     recs     = []
 
     if "disparate_impact_ratio" in hit:
         recs.append({
             "priority": 1, "type": "reweighting",
+            "bias_type": "disparate_impact",
+            "protected_attribute": primary,
             "description": (
                 "Apply per-(class, group) sample weights so the optimizer sees a "
                 "balanced representation of each group during training."
@@ -379,6 +405,8 @@ def generate_recommendations(flags: list[dict], attr_names: list[str]) -> list[d
     if "demographic_parity_diff" in hit:
         recs.append({
             "priority": 2, "type": "resampling",
+            "bias_type": "demographic_parity",
+            "protected_attribute": primary,
             "description": (
                 "Oversample the underprivileged group with SMOTE to balance the "
                 "training distribution before fitting."
@@ -399,6 +427,8 @@ def generate_recommendations(flags: list[dict], attr_names: list[str]) -> list[d
 
     recs.append({
         "priority": 3, "type": "threshold_adjustment",
+        "bias_type": fallback_bias_type,
+        "protected_attribute": primary,
         "description": (
             "Calibrate a separate classification threshold per group on a validation "
             "set to equalize positive prediction rates at inference time — no retraining needed."
@@ -426,6 +456,8 @@ def generate_recommendations(flags: list[dict], attr_names: list[str]) -> list[d
 
     recs.append({
         "priority": 4, "type": "fairness_constraints",
+        "bias_type": fallback_bias_type,
+        "protected_attribute": primary,
         "description": (
             "Use Fairlearn's ExponentiatedGradient with a DemographicParity constraint "
             "to enforce fairness directly during training."
@@ -442,6 +474,14 @@ def generate_recommendations(flags: list[dict], attr_names: list[str]) -> list[d
             y_pred_fair = mitigator.predict(X_test)
         """),
     })
+
+    for rec in recs:
+        diff_summary = f"{rec['description']}\n\n{rec['code']}"
+        rec["social_context"] = get_social_context(
+            diff_summary=diff_summary,
+            bias_type=rec["bias_type"],
+            protected_attr=rec["protected_attribute"],
+        ).to_dict()
 
     return recs
 

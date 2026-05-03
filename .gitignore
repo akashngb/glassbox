@@ -25,3 +25,10 @@ dist/
 adult.csv
 adult.data
 adult.test
+
+docs/
+.claude/
+.env
+
+# Throwaway local demo scripts
+tester/

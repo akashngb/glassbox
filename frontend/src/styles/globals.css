@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
 
 @theme {
   /* Surfaces — warm-cool dark with a single amber accent. */
@@ -105,6 +105,91 @@ body.gb-body {
   50%  { box-shadow: 0 0 0 8px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
+
+/* Animated gradient border, used by <BorderRotate />. */
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.gradient-border-component {
+  position: relative;
+}
+
+@keyframes gb-gradient-rotate {
+  to { --gradient-angle: 360deg; }
+}
+
+.gradient-border-auto {
+  animation: gb-gradient-rotate var(--animation-duration, 5s) linear infinite;
+}
+
+.gradient-border-hover:hover {
+  animation: gb-gradient-rotate var(--animation-duration, 5s) linear infinite;
+}
+
+.gradient-border-stop-hover {
+  animation: gb-gradient-rotate var(--animation-duration, 5s) linear infinite;
+}
+
+.gradient-border-stop-hover:hover {
+  animation-play-state: paused;
+}
+
+/* Range-input styling. Native input keeps the form semantics + free a11y; the
+   `--gb-slider-accent` CSS var lets the host pick the thumb color per card. */
+.gb-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.gb-slider:focus { outline: none; }
+.gb-slider::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 22px;
+  border: none;
+}
+.gb-slider::-moz-range-track {
+  background: transparent;
+  height: 22px;
+  border: none;
+}
+.gb-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  /* center the 14px thumb on the 22px track (margin = (track - thumb) / 2) */
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--gb-slider-accent, var(--color-fg));
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 0 0 1px var(--gb-slider-accent, var(--color-fg)),
+              0 0 8px color-mix(in srgb, var(--gb-slider-accent, var(--color-fg)) 60%, transparent),
+              0 1px 4px rgba(0, 0, 0, 0.5);
+  transition: transform 120ms var(--ease-out);
+}
+.gb-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--gb-slider-accent, var(--color-fg));
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 0 0 1px var(--gb-slider-accent, var(--color-fg)),
+              0 0 8px color-mix(in srgb, var(--gb-slider-accent, var(--color-fg)) 60%, transparent),
+              0 1px 4px rgba(0, 0, 0, 0.5);
+  transition: transform 120ms var(--ease-out);
+}
+.gb-slider:hover::-webkit-slider-thumb,
+.gb-slider:active::-webkit-slider-thumb { transform: scale(1.12); }
+.gb-slider:hover::-moz-range-thumb,
+.gb-slider:active::-moz-range-thumb { transform: scale(1.12); }
 
 /* Reduced-motion baked at the framework level — every transition gets neutered. */
 @media (prefers-reduced-motion: reduce) {
