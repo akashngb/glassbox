@@ -72,11 +72,21 @@ function Draggable({
   children: React.ReactNode;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [offset, setOffset] = useState({ dx: 0, dy: 0 });
+  // Drag offset lives in a ref. We mutate the DOM transform directly during a
+  // drag so React doesn't reconcile the conic-gradient subtree (or anything
+  // else) on every pointermove. State only changes on drag start/end.
+  const offsetRef = useRef({ dx: 0, dy: 0 });
   const [dragging, setDragging] = useState(false);
+
+  const writeTransform = (dx: number, dy: number) => {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+  };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!cardRef.current || !canvasRef.current) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     onActivate();
     e.preventDefault();
 
@@ -84,37 +94,37 @@ function Draggable({
     const canvasRect = canvasRef.current.getBoundingClientRect();
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
-    // Position of the card *before* any current transform offset
-    const baseLeft = cardRect.left - canvasRect.left - offset.dx;
-    const baseTop = cardRect.top - canvasRect.top - offset.dy;
-    const cardW = cardRect.width;
-    const cardH = cardRect.height;
-    const maxLeftDelta = canvasRect.width - cardW - baseLeft;
-    const minLeftDelta = -baseLeft;
-    const maxTopDelta = canvasRect.height - cardH - baseTop;
-    const minTopDelta = -baseTop;
+    const startDx = offsetRef.current.dx;
+    const startDy = offsetRef.current.dy;
+    // Card's "origin" position within the canvas (before any drag offset)
+    const baseLeft = cardRect.left - canvasRect.left - startDx;
+    const baseTop = cardRect.top - canvasRect.top - startDy;
+    const minDx = -baseLeft;
+    const maxDx = canvasRect.width - cardRect.width - baseLeft;
+    const minDy = -baseTop;
+    const maxDy = canvasRect.height - cardRect.height - baseTop;
 
     setDragging(true);
-    let raf = 0;
-    let pendingDx = offset.dx;
-    let pendingDy = offset.dy;
 
-    const flush = () => {
+    let raf = 0;
+    const tick = () => {
       raf = 0;
-      setOffset({ dx: pendingDx, dy: pendingDy });
+      writeTransform(offsetRef.current.dx, offsetRef.current.dy);
     };
 
     const handleMove = (ev: PointerEvent) => {
-      const wantDx = ev.clientX - startMouseX;
-      const wantDy = ev.clientY - startMouseY;
-      pendingDx = Math.max(minLeftDelta, Math.min(maxLeftDelta, wantDx));
-      pendingDy = Math.max(minTopDelta, Math.min(maxTopDelta, wantDy));
-      if (!raf) raf = requestAnimationFrame(flush);
+      const wantDx = startDx + (ev.clientX - startMouseX);
+      const wantDy = startDy + (ev.clientY - startMouseY);
+      offsetRef.current = {
+        dx: Math.max(minDx, Math.min(maxDx, wantDx)),
+        dy: Math.max(minDy, Math.min(maxDy, wantDy)),
+      };
+      if (!raf) raf = requestAnimationFrame(tick);
     };
 
     const handleUp = () => {
       if (raf) cancelAnimationFrame(raf);
-      setOffset({ dx: pendingDx, dy: pendingDy });
+      writeTransform(offsetRef.current.dx, offsetRef.current.dy);
       setDragging(false);
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
@@ -130,19 +140,22 @@ function Draggable({
     <div
       ref={cardRef}
       onPointerDown={handlePointerDown}
+      draggable={false}
       className={`${className} ${isActive ? "z-30" : "z-10"} ${
         dragging ? "cursor-grabbing" : "cursor-grab"
       }`}
       style={{
-        transform: `translate3d(${offset.dx}px, ${offset.dy}px, 0)${
-          dragging ? " scale(1.025)" : ""
-        }`,
+        // React only writes transform on initial mount and on drag-end. Between
+        // those points, pointermove mutates el.style.transform directly via
+        // writeTransform — bypassing React reconciliation entirely.
+        transform: `translate3d(${offsetRef.current.dx}px, ${offsetRef.current.dy}px, 0)`,
         transition: dragging
-          ? "transform 0s, filter 200ms"
-          : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms",
-        filter: dragging
-          ? "drop-shadow(0 22px 32px rgba(0,0,0,0.8))"
-          : "drop-shadow(0 8px 18px rgba(0,0,0,0.55))",
+          ? "none"
+          : "box-shadow 200ms ease-out",
+        boxShadow: dragging
+          ? "0 24px 36px -10px rgba(0,0,0,0.75)"
+          : "0 6px 16px -6px rgba(0,0,0,0.55)",
+        borderRadius: "12px",
         touchAction: "none",
         willChange: "transform",
       }}
@@ -168,7 +181,7 @@ function CardShell({
       borderWidth={1}
       borderRadius={12}
       animationSpeed={speed}
-      className="shadow-[0_8px_32px_-12px_rgba(0,0,0,0.9)] backdrop-blur-sm"
+      className=""
     >
       <div className="px-3.5 py-3">{children}</div>
     </BorderRotate>

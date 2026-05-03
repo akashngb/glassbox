@@ -46,8 +46,8 @@ DIR_THRESHOLD   = 0.80   # min acceptable disparate impact ratio (80% rule)
 EOD_THRESHOLD   = 0.10   # max acceptable equal opportunity difference
 
 # Unlearn candidate selection
-CANDIDATE_SCORE = 0.75   # min model confidence to flag a sample as a candidate
-MAX_UNLEARN_PCT = 0.05   # cap unlearning at 5% of training set per attribute
+CANDIDATE_SCORE = 0.65   # widen pool by 0.10 (DPD/DIR pull)
+MAX_UNLEARN_PCT = 0.075  # +2.5pp severity bonus per HIGH flag
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 
