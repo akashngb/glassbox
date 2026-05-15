@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# SISA artefacts
+models/
+*.pkl
+bias_report.json
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Local data
+adult.csv
+adult.data
+adult.test
+
+docs/
+.claude/
+.env
+
+# Throwaway local demo scripts
+tester/
