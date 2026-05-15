@@ -87,15 +87,21 @@ function Draggable({
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!cardRef.current || !canvasRef.current) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    
+    // Capture the pointer to ensure events continue even if the pointer leaves the card
+    const el = cardRef.current;
+    el.setPointerCapture(e.pointerId);
+    
     onActivate();
     e.preventDefault();
 
-    const cardRect = cardRef.current.getBoundingClientRect();
+    const cardRect = el.getBoundingClientRect();
     const canvasRect = canvasRef.current.getBoundingClientRect();
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
     const startDx = offsetRef.current.dx;
     const startDy = offsetRef.current.dy;
+    
     // Card's "origin" position within the canvas (before any drag offset)
     const baseLeft = cardRect.left - canvasRect.left - startDx;
     const baseTop = cardRect.top - canvasRect.top - startDy;
@@ -122,8 +128,9 @@ function Draggable({
       if (!raf) raf = requestAnimationFrame(tick);
     };
 
-    const handleUp = () => {
+    const handleUp = (ev: PointerEvent) => {
       if (raf) cancelAnimationFrame(raf);
+      el.releasePointerCapture(ev.pointerId);
       writeTransform(offsetRef.current.dx, offsetRef.current.dy);
       setDragging(false);
       window.removeEventListener("pointermove", handleMove);
